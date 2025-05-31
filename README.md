@@ -26,6 +26,7 @@ If you press the "?" button, you will be shown the help. Its contents for versio
 ![Anki_Card_Templates_3](https://github.com/user-attachments/assets/32499371-5412-425d-a964-0202bd7204ba)
 
 There may be a translation for your language, so install the add-on and check.
+In the screenshots below, the highlighting is implemented using the add-on [https://ankiweb.net/shared/info/1621264520](https://ankiweb.net/shared/info/1621264520)
 
 When installing the add-on, you can change the configuration. Here you can see what languages ​​the add-on is translated into. In the configuration, you can disable code autocompletion, autoinsert, you can set up commands to launch an external editor, set up the add-on language or it will automatically detect the language in the anchor. There is only one highlighting theme, but if necessary, you can add it yourself or change the standard one.
 
@@ -33,6 +34,14 @@ When installing the add-on, you can change the configuration. Here you can see w
 ![Anki_Card_Templates_5](https://github.com/user-attachments/assets/ed0d2cf0-fac0-4a9c-9da0-c110be2f1652)
 
 In the configuration you can also set your own templates. They start with a percent sign and are entered in the same way. Double percent indicates the cursor position (see the help for how to navigate these positions). Double dollar signs indicate the positions where the text selected before calling this template will be inserted.
+
+![Anki_Card_Templates_6](https://github.com/user-attachments/assets/bb165757-f3b4-4466-9fbd-6e4ad33d065a)
+
+Important operators, such as a cycle, can be highlighted especially, as well as important ones such as exiting a function, interruptions - they are highlighted in bright red.
+Here on the screen at the very beginning there are many blue underlining lines - this indicates that tabulation was applied. And it is better to replace tabulation with 4 spaces (you can copy the entire text and paste it again, then the replacement will be made automatically). Red underlining lines are possible - this is some kind of sign, some kind of indistinguishable space and it may interfere with you, so pay attention.
+
+If you need to comment out a group of lines or uncomment them, then be sure to select them all, otherwise simply deleting the start and end tags may not always give the correct highlighting result, but you can fix this yourself by pressing the F4 button and if none of the characters are selected.
+
 
 
 
