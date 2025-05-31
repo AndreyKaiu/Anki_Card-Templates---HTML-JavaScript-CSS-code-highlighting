@@ -22,58 +22,14 @@ Color codes can have a background highlighting.
 The cursor position and the character after it are shown under the text.
 If you press the "?" button, you will be shown the help. Its contents for version 1.0:
 
-Hotkey
+![Anki_Card_Templates_2](https://github.com/user-attachments/assets/d95ffa57-2cf2-4626-b1d1-4d644517c855)
+![Anki_Card_Templates_3](https://github.com/user-attachments/assets/32499371-5412-425d-a964-0202bd7204ba)
 
-<b>...</b> - Ctrl+B 
-<i>...</i> - Ctrl+I 
-<u>...</u> - Ctrl+U 
-<mark>...</mark> - Ctrl+M 
-<details>...</details> - Ctrl+Shift+D 
-<span style="color: >...</span> - Ctrl+Shift+T 
-<span style="background-color: >...</span> - Ctrl+Shift+B 
-<br> - Shift+Enter 
-<blockquote>...</blockquote> - Ctrl+Q 
-<sub>...</sub> - Ctrl+= 
-<sup>...</sup> - Ctrl+Shift+= 
-<h1>...</h1> - Ctrl+Shift+1 (+!) 
-<h2>...</h2> - Ctrl+Shift+2 (+@) 
-<h3>...</h3> - Ctrl+Shift+3 (+#) 
-<h4>...</h4> - Ctrl+Shift+4 (+$) 
-<h5>...</h5> - Ctrl+Shift+5 (+%) 
-<h6>...</h6> - Ctrl+Shift+6 (+^) 
-<p>...</p> - Ctrl+Shift+7 (+&) 
-<div>...</div> - Ctrl+Shift+8 (+*) 
-<!-- ... --> - Ctrl+/ 
-/* ... */ - Ctrl+Shift+/ 
-F1 — show this window 
-Alt+0 — show this window 
-Tab — insert 4 spaces (and if selected, before lines. If the autocomplete window is open, Enter and Tab enter the top one from the list) 
-RShift+Tab — insert a tab character (if needed in the code tag and other similar ones) 
-LShift+Tab — delete back 4 spaces (and if selected, before lines) 
-Ctrl+Tab — Search forward %% 
-Ctrl+Shift+Tab — Search back %% 
-Ctrl+Space — Show Code completion (and adds all the words from the text) 
-F2 — Save to file and transfer to external editor 
-F4 — update the highlight and highlight all as selected 
-F5 — Update from previously saved file 
-Ctrl+F — search for a substring 
-F3 — search next (what was previously searched for by Ctrl+F) 
-Shift+F3 — search back (what was previously searched for by Ctrl+F) 
-Ctrl+H — show this window 
-Ctrl+G — go to line with number 
-Ctrl+S — Save backup copy (and to file) 
-Ctrl+O — Load from previously saved file 
-Ctrl+V — insert as text (tabs are replaced with 4 spaces) 
-Ctrl+Shift+V — insert as text (without replacing tabs) 
-Ctrl+Shift+Insert — insert plain HTML (b, i, u and some others) 
-Ctrl+Shift+Alt+Insert — insert plain HTML with color preservation 
-Home — go to the beginning of the text, and if already there, then to the beginning of the line 
-End — go to the end of the line, and if already there, then to the end of the text 
-Enter — insert with spaces if at the beginning of the text or at the end (special cases for {}). If the autocomplete window is open, Enter and Tab enter the top one from the list 
-Ctrl+Enter — save and close 
-Ctrl+Shift+T or Ctrl+Shift+B — if the selected color code is in the format #RRGGBB, then it will change only it 
-Alt+Left — to the previous cursor position (where the cursor changed position with keys) 
-Alt+Right — to the next cursor position (where the cursor changed position with keys) 
+There may be a translation for your language, so install the add-on and check.
+
+
+
+
 
 
 
