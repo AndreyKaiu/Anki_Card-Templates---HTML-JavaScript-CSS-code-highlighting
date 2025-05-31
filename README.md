@@ -10,4 +10,16 @@ This code was corrected, improved and supplemented with other ideas:
 If necessary, such copies can be loaded later.
 - code autocompletion, autoinsert, custom code templates.
 - highlighting by code of all words, as in the current selection, ability to search for the desired word by code (Ctrl+F, and continue F3)
-And other
+
+And other...
+
+![Anki_Card_Templates_1](https://github.com/user-attachments/assets/11369767-eea3-419a-82bd-83ea2fa8654e)
+
+Note that the standard search is done both forward and backward.
+The first line can be like this. This line is required for transferring to a third-party editor and monitoring file changes. Here, the highlighting for paired characters is also shown.
+Important things are highlighted in red, here it is a style and highlighting for them separately, not like a line.
+Color codes can have a background highlighting.
+The cursor position and the character after it are shown under the text.
+
+
+
