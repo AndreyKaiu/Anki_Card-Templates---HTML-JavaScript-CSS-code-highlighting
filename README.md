@@ -28,7 +28,7 @@ If you press the "?" button, you will be shown the help. Its contents for versio
 There may be a translation for your language, so install the add-on and check.
 In the screenshots below, the highlighting is implemented using the add-on [https://ankiweb.net/shared/info/1621264520](https://ankiweb.net/shared/info/1621264520)
 
-When installing the add-on, you can change the configuration. Here you can see what languages ​​the add-on is translated into. In the configuration, you can disable code autocompletion, autoinsert, you can set up commands to launch an external editor, set up the add-on language or it will automatically detect the language in the anchor. There is only one highlighting theme, but if necessary, you can add it yourself or change the standard one.
+When installing the add-on, you can change the configuration. Here you can see what languages ​​the add-on is translated into. In the configuration, you can disable code autocompletion, autoinsert, you can set up commands to launch an external editor, set up the add-on language or it will automatically detect the language in the anki. There is only one highlighting theme, but if necessary, you can add it yourself or change the standard one.
 
 ![Anki_Card_Templates_4](https://github.com/user-attachments/assets/5800408c-3da9-4625-9939-bf307e1d4189)
 ![Anki_Card_Templates_5](https://github.com/user-attachments/assets/ed0d2cf0-fac0-4a9c-9da0-c110be2f1652)
