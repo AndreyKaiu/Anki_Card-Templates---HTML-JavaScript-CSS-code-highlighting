@@ -42,6 +42,12 @@ Here on the screen at the very beginning there are many blue underlining lines -
 
 If you need to comment out a group of lines or uncomment them, then be sure to select them all, otherwise simply deleting the start and end tags may not always give the correct highlighting result, but you can fix this yourself by pressing the F4 button and if none of the characters are selected.
 
+Switching card types here is changed from F3, F4 to Ctrl+F3, Ctrl+F4 since I needed my own hot keys for F3 and F4
+I have 7 cursor position histories so far. The algorithm is not quite usual, that is, when you roll back, you do not delete positions. The position history allows you to quickly go back and forth to the code you need.
+Please note that pressing "End" again is not quite standard, but it allows you to go to the end of the visible part of the line, and pressing here to move to a new line will result in the extra left spaces being removed.
+
+
+
 
 
 
