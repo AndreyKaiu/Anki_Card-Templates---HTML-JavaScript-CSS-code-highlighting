@@ -46,6 +46,7 @@ Switching card types here is changed from F3, F4 to Ctrl+F3, Ctrl+F4 since I nee
 I have 7 cursor position histories so far. The algorithm is not quite usual, that is, when you roll back, you do not delete positions. The position history allows you to quickly go back and forth to the code you need.
 Please note that pressing "End" again is not quite standard, but it allows you to go to the end of the visible part of the line, and pressing here to move to a new line will result in the extra left spaces being removed.
 
+The highlighting code is not the most ideal, but it is quite acceptable for simple use. A large number of lines can load the highlighting algorithms, but it seems that up to 1500 lines of code do not highlight everything for a long time and most likely there will be no problems.
 
 
 
