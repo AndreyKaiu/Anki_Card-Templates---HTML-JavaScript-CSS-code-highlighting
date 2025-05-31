@@ -30,6 +30,10 @@ There may be a translation for your language, so install the add-on and check.
 When installing the add-on, you can change the configuration. Here you can see what languages ​​the add-on is translated into. In the configuration, you can disable code autocompletion, autoinsert, you can set up commands to launch an external editor, set up the add-on language or it will automatically detect the language in the anchor. There is only one highlighting theme, but if necessary, you can add it yourself or change the standard one.
 
 ![Anki_Card_Templates_4](https://github.com/user-attachments/assets/5800408c-3da9-4625-9939-bf307e1d4189)
+![Anki_Card_Templates_5](https://github.com/user-attachments/assets/ed0d2cf0-fac0-4a9c-9da0-c110be2f1652)
+
+In the configuration you can also set your own templates. They start with a percent sign and are entered in the same way. Double percent indicates the cursor position (see the help for how to navigate these positions). Double dollar signs indicate the positions where the text selected before calling this template will be inserted.
+
 
 
 
