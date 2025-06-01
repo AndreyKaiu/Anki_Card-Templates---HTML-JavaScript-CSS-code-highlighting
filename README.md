@@ -46,7 +46,10 @@ Switching card types here is changed from F3, F4 to Ctrl+F3, Ctrl+F4 since I nee
 I have 7 cursor position histories so far. The algorithm is not quite usual, that is, when you roll back, you do not delete positions. The position history allows you to quickly go back and forth to the code you need.
 Please note that pressing "End" again is not quite standard, but it allows you to go to the end of the visible part of the line, and pressing here to move to a new line will result in the extra left spaces being removed.
 
-The highlighting code is not the most ideal, but it is quite acceptable for simple use. A large number of lines can load the highlighting algorithms, but it seems that up to 1500 lines of code do not highlight everything for a long time and most likely there will be no problems.
+The highlighting code is not the most ideal, but it is quite acceptable for simple use. A large number of lines can load the highlighting algorithms, but it seems that up to 1500 lines of code do not highlight everything for long and most likely there will be no problems.
+
+If you open the template code in a third-party editor by pressing F2, then do not forget to save the code when switching from it, and when you get to the Anki editor, you can get all the updates by pressing F5. If you make a change to the template code in Anki and you have a third-party editor open, then you also need to save when switching, then the third-party editor will usually notice the changes itself and there will be no problems.
+
 
 
 
