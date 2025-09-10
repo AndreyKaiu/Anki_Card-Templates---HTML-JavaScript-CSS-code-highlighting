@@ -55,27 +55,27 @@ If you open the template code in a third-party editor by pressing F2, then do no
 
 - 1.1, date: 2025-09-10. Corrected and improved:
   
- • fixed the error when pressing F2 if the front side was not opened before.
+ — fixed the error when pressing F2 if the front side was not opened before.
  
- • error in the comment presentation if the long comment symbol ` was somewhere in "`"
+ — error in the comment presentation if the long comment symbol ` was somewhere in "`"
  
- • highlighting {{}} even if the field is specified in "" or in ''
+ — highlighting {{}} even if the field is specified in "" or in ''
  
- • highlighting of color words will be with a word boundary check
+ — highlighting of color words will be with a word boundary check
  
- • the "Home" and "End" buttons began to work correctly with the "Shift" key
+ — the "Home" and "End" buttons began to work correctly with the "Shift" key
  
- • &nbsp; - Ctrl+Shift+Space
+ — &nbsp; - Ctrl+Shift+Space
  
- • multi-line comment `` is now supported only with the equal sign =``
+ — multi-line comment `` is now supported only with the equal sign =``
  
- • fixed the error of searching backwards for brackets }
+ — fixed the error of searching backwards for brackets }
  
- • the most important thing is that saving the cursor position for each template has been added. This is very important if you have complex code in templates. The history of 7 cursor positions (which were moved along the line) is also saved for each template ("Alr+Left" or "Alr+Right" - view the history of the position)
+ — the most important thing is that saving the cursor position for each template has been added. This is very important if you have complex code in templates. The history of 7 cursor positions (which were moved along the line) is also saved for each template ("Alr+Left" or "Alr+Right" - view the history of the position)
  
- • search and replace are saved globally for all, and positions only for a specific file
+ — search and replace are saved globally for all, and positions only for a specific file
  
- • some more keywords have been added for the drop-down hint  
+ — some more keywords have been added for the drop-down hint  
  
 - 1.0, date: 2025-06-01. First release
 
