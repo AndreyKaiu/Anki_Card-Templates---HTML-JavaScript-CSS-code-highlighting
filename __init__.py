@@ -16,8 +16,10 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.0, date: 2025-06-01
+# Version 1.1, date: 2025-09-10
 import os
+import json
+import time
 import re
 import shlex
 import copy
@@ -59,6 +61,7 @@ try:
         QCompleter,
         QFileDialog,
         QLabel,
+        QComboBox,
         QLineEdit,
         QStyledItemDelegate        
     )    
@@ -78,6 +81,7 @@ except ImportError:
         QCompleter,
         QFileDialog,
         QLabel,
+        QComboBox,
         QLineEdit,
         QStyledItemDelegate        
     )
@@ -85,31 +89,130 @@ except ImportError:
     from PyQt5.QtCore import QRegExp, Qt, QSize, QEvent, QTimer
     pyqt_version = "PyQt5"
 
-
-if pyqt_version == "PyQt6":
+if pyqt_version == "PyQt6":    
     KeepAnchor = QTextCursor.MoveMode.KeepAnchor
+    MoveAnchor = QTextCursor.MoveMode.MoveAnchor
     NextCharacter = QTextCursor.MoveOperation.NextCharacter
     PreviousCharacter = QTextCursor.MoveOperation.PreviousCharacter
     SingleUnderline = QTextCharFormat.UnderlineStyle.SingleUnderline 
     WA_TransparentForMouseEvents = Qt.WidgetAttribute.WA_TransparentForMouseEvents
     WA_NoSystemBackground = Qt.WidgetAttribute.WA_NoSystemBackground
     WA_TranslucentBackground = Qt.WidgetAttribute.WA_TranslucentBackground
+    MetaModifier = Qt.KeyboardModifier.MetaModifier
+    ControlModifier = Qt.KeyboardModifier.ControlModifier 
+    ShiftModifier = Qt.KeyboardModifier.ShiftModifier
+    AltModifier = Qt.KeyboardModifier.AltModifier
     FindBackward = QTextDocument.FindFlag.FindBackward
     FindWholeWords = QTextDocument.FindFlag.FindWholeWords 
     FindCaseSensitively = QTextDocument.FindFlag.FindCaseSensitively
     Start = QTextCursor.MoveOperation.Start
+    WaitCursor = Qt.CursorShape.WaitCursor
+    GC_white = Qt.GlobalColor.white
+    GC_black = Qt.GlobalColor.black
+    CustomContextMenu = Qt.ContextMenuPolicy.CustomContextMenu
+    Key_Return = Qt.Key.Key_Return
+    Key_Space = Qt.Key.Key_Space
+    Key_Percent = Qt.Key.Key_Percent
+    Key_Tab = Qt.Key.Key_Tab
+    Key_Backtab = Qt.Key.Key_Backtab
+    Key_Enter = Qt.Key.Key_Enter
+    Key_Escape = Qt.Key.Key_Escape
+    Key_Up = Qt.Key.Key_Up
+    Key_Down = Qt.Key.Key_Down
+    Key_V = Qt.Key.Key_V
+    Key_Home = Qt.Key.Key_Home
+    Key_End = Qt.Key.Key_End
+    Key_F1 = Qt.Key.Key_F1
+    Key_0 = Qt.Key.Key_0
+    Key_Slash = Qt.Key.Key_Slash
+    Key_B = Qt.Key.Key_B
+    Key_I = Qt.Key.Key_I
+    Key_U = Qt.Key.Key_U
+    Key_K = Qt.Key.Key_K
+    Key_M = Qt.Key.Key_M
+    Key_Q = Qt.Key.Key_Q
+    Key_Equal = Qt.Key.Key_Equal
+    Key_Plus = Qt.Key.Key_Plus
+    Key_Exclam = Qt.Key.Key_Exclam
+    Key_At = Qt.Key.Key_At
+    Key_NumberSign = Qt.Key.Key_NumberSign
+    Key_Dollar = Qt.Key.Key_Dollar
+    Key_AsciiCircum = Qt.Key.Key_AsciiCircum
+    Key_Ampersand = Qt.Key.Key_Ampersand
+    Key_Asterisk = Qt.Key.Key_Asterisk
+    Key_D = Qt.Key.Key_D
+    Key_T = Qt.Key.Key_T
+    Key_B = Qt.Key.Key_B
+    Key_BraceLeft = Qt.Key.Key_BraceLeft
+    Key_BracketLeft = Qt.Key.Key_BracketLeft
+    Key_ParenLeft = Qt.Key.Key_ParenLeft
+    Key_QuoteDbl = Qt.Key.Key_QuoteDbl
+    Key_Apostrophe = Qt.Key.Key_Apostrophe
+    Key_Minus = Qt.Key.Key_Minus
+    Key_Greater = Qt.Key.Key_Greater
+
+
 else:
     KeepAnchor = QTextCursor.KeepAnchor
+    MoveAnchor = QTextCursor.MoveAnchor
     NextCharacter = QTextCursor.NextCharacter
     PreviousCharacter = QTextCursor.PreviousCharacter
     SingleUnderline = QTextCharFormat.SingleUnderline 
     WA_TransparentForMouseEvents = Qt.WA_TransparentForMouseEvents
     WA_NoSystemBackground = Qt.WA_NoSystemBackground
     WA_TranslucentBackground = Qt.WA_TranslucentBackground 
+    MetaModifier = Qt.MetaModifier
+    ControlModifier = Qt.ControlModifier 
+    ShiftModifier = Qt.ShiftModifier
+    AltModifier = Qt.AltModifier
     FindBackward = QTextDocument.FindBackward
     FindWholeWords = QTextDocument.FindWholeWords 
     FindCaseSensitively = QTextDocument.FindCaseSensitively
     Start = QTextCursor.Start
+    WaitCursor = Qt.WaitCursor
+    GC_white = Qt.white
+    GC_black = Qt.black
+    CustomContextMenu = Qt.CustomContextMenu
+    Key_Return = Qt.Key_Return
+    Key_Space = Qt.Key_Space
+    Key_Percent = Qt.Key_Percent
+    Key_Tab = Qt.Key_Tab
+    Key_Backtab = Qt.Key_Backtab
+    Key_Enter = Qt.Key_Enter
+    Key_Escape = Qt.Key_Escape
+    Key_Up = Qt.Key_Up
+    Key_Down = Qt.Key_Down
+    Key_V = Qt.Key_V
+    Key_Home = Qt.Key_Home
+    Key_End = Qt.Key_End
+    Key_F1 = Qt.Key_F1
+    Key_0 = Qt.Key_0
+    Key_Slash = Qt.Key_Slash
+    Key_B = Qt.Key_B
+    Key_I = Qt.Key_I
+    Key_U = Qt.Key_U
+    Key_K = Qt.Key_K
+    Key_M = Qt.Key_M
+    Key_Q = Qt.Key_Q
+    Key_Equal = Qt.Key_Equal
+    Key_Plus = Qt.Key_Plus
+    Key_Exclam = Qt.Key_Exclam
+    Key_At = Qt.Key_At
+    Key_NumberSign = Qt.Key_NumberSign
+    Key_Dollar = Qt.Key_Dollar
+    Key_AsciiCircum = Qt.Key_AsciiCircum
+    Key_Ampersand = Qt.Key_Ampersand
+    Key_Asterisk = Qt.Key_Asterisk
+    Key_D = Qt.Key_D
+    Key_T = Qt.Key_T
+    Key_B = Qt.Key_B
+    Key_BraceLeft = Qt.Key_BraceLeft
+    Key_BracketLeft = Qt.Key_BracketLeft
+    Key_ParenLeft = Qt.Key_ParenLeft
+    Key_QuoteDbl = Qt.Key_QuoteDbl
+    Key_Apostrophe = Qt.Key_Apostrophe
+    Key_Minus = Qt.Key_Minus
+    Key_Greater = Qt.Key_Greater
 
 # ========================= LOGGING ===========================================
 log: Logger = logging.getLogger(__name__)
@@ -216,12 +319,13 @@ def localizationF(par1, default=""):
 html_js_highlighting_addon = None
 thisCardLayout = None
 template_name = None
+gl_model_name = None
 from aqt.gui_hooks import card_layout_will_show
 
 original_update_current_ordinal_and_redraw = None
 
 def custom_update_current_ordinal_and_redraw(self, idx: int) -> None:    
-    global template_name, html_js_highlighting_addon, original_update_current_ordinal_and_redraw    
+    global template_name, gl_model_name, html_js_highlighting_addon, original_update_current_ordinal_and_redraw    
     if self.ignore_change_signals:
         return
     # если изменения пройдут и станет self.ord = idx то надо сохранить позицию
@@ -229,7 +333,7 @@ def custom_update_current_ordinal_and_redraw(self, idx: int) -> None:
 
     original_update_current_ordinal_and_redraw(idx) # вызов оригинального
 
-    template_name = self.model["name"] + "_card" + str(self.ord+1)
+    template_name = self.model["name"] + "_card" + str(self.ord+1)    
     # изменения прошли и вызвать смену позиции        
     html_js_highlighting_addon.restore_cursor_position(html_js_highlighting_addon.cur_edit_area, html_js_highlighting_addon.current_button)
     html_js_highlighting_addon.needs_update_from_external_editor(html_js_highlighting_addon.cur_edit_area)
@@ -238,7 +342,7 @@ def custom_update_current_ordinal_and_redraw(self, idx: int) -> None:
 
 paste_without_tab_replace = False
 def on_card_layout_will_show(card_layout: CardLayout):   
-    global thisCardLayout, template_name, theme_night, colors, html_js_highlighting_addon, original_update_current_ordinal_and_redraw   
+    global thisCardLayout, gl_model_name, template_name, theme_night, colors, html_js_highlighting_addon, original_update_current_ordinal_and_redraw   
     if theme_manager.night_mode: # определям темная или светлая тема
         theme_night = True
     else:
@@ -274,6 +378,11 @@ def on_card_layout_will_show(card_layout: CardLayout):
         for i in range(len(thisCardLayout.templates))
     }
 
+    gl_model_name = card_layout.model["name"] 
+    # print("html_js_highlighting_addon.load_cursor_positions_from_prefs21")
+    # QTimer.singleShot(100, lambda: html_js_highlighting_addon.load_cursor_positions_from_prefs21(gl_model_name) )
+    html_js_highlighting_addon.load_cursor_positions_from_prefs21(gl_model_name)
+
     # замена на свой update_current_ordinal_and_redraw
     original_update_current_ordinal_and_redraw = card_layout.update_current_ordinal_and_redraw
     # Привязываем кастомный метод к экземпляру card_layout
@@ -285,12 +394,15 @@ def on_card_layout_will_show(card_layout: CardLayout):
         card_layout.update_current_ordinal_and_redraw,
     )   
 
+    
+    
+
 
     # подмена on_search_changed чтобы можно было сделать поиск назад по Shift+Enter
     def custom_on_search_changed(self, text: str) -> None:
         editor = self.tform.edit_area
         modifiers = QApplication.keyboardModifiers()        
-        if modifiers == Qt.KeyboardModifier.ShiftModifier:            
+        if modifiers == ShiftModifier:            
             cursor = editor.textCursor()
             start_pos = cursor.position() - 1
             cursor.movePosition(QTextCursor.MoveOperation.Left)  # Перемещаем курсор на одну позицию назад
@@ -564,50 +676,159 @@ class AppFocusWatcher(QObject):  # Наследуемся от QObject
 focus_watcher = AppFocusWatcher(QApplication.instance())
 
 
+
+class InputDialogWithHistory:
+    def __init__(self, nameH="input_dialog_with_history", max_history=20):
+        self.max_history = max_history
+        self.nameH = nameH
+        self.history = {}  # Будет хранить историю для разных заголовков/меток
+        self.load_history() # Загружает историю из настроек
+        
+    def getText(self, parent, title, label, default_text=""):
+        """Показывает диалог ввода с историей"""
+        # Создаем комбобокс вместо обычного поля ввода
+        dialog = QDialog(parent)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout(dialog)
+        
+        # Метка
+        layout.addWidget(QLabel(label))
+        
+        # Комбобокс с историей
+        combo = QComboBox()
+        combo.setEditable(True)
+        combo.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
+        combo.setMaxCount(self.max_history)
+        combo.setDuplicatesEnabled(False)
+        
+        # Загружаем историю 
+        history_key = self.nameH
+        if history_key in self.history:
+            for item in self.history[history_key]:
+                combo.addItem(item)
+        
+        if default_text:
+            combo.setCurrentText(default_text)
+        
+        layout.addWidget(combo)
+        combo.lineEdit().selectAll()
+        
+        # Кнопки
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | 
+                                     QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        
+        # Показываем диалог
+        result = dialog.exec()
+        text = combo.currentText().strip()
+        
+        if result == QDialog.DialogCode.Accepted and text:
+            # Сохраняем в историю
+            self._add_to_history(history_key, text)
+            self.save_history()
+            return text, True
+        else:
+            return "", False
+    
+    def _add_to_history(self, key, text):
+        """Добавляет текст в историю"""
+        if key not in self.history:
+            self.history[key] = []
+        
+        # Удаляем если уже есть
+        if text in self.history[key]:
+            self.history[key].remove(text)
+        
+        # Добавляем в начало
+        self.history[key].insert(0, text)
+        
+        # Ограничиваем размер истории
+        if len(self.history[key]) > self.max_history:
+            self.history[key] = self.history[key][:self.max_history]
+    
+    def save_history(self):
+        """Сохраняет историю в настройки"""
+        try:
+            mw.pm.profile[self.nameH] = self.history
+        except:
+            pass
+    
+    def load_history(self):
+        """Загружает историю из настроек"""
+        try:
+            self.history = mw.pm.profile.get(self.nameH, {})            
+        except:
+            self.history = {}
+    
+    def closeEvent(self, event):
+        """Сохраняем историю при закрытии"""
+        self.save_history()
+        super().closeEvent(event)
+
+
+
+
 class FindReplaceDialog(QDialog):
     def __init__(self, editor):
         super().__init__()
         self.editor = editor
-        self.setWindowTitle(  localizationF("Find_and_Replace", "Find and Replace"))
+        self.setWindowTitle(localizationF("Find_and_Replace", "Find and Replace"))
         layout = QVBoxLayout(self)
 
         cursor = self.editor.textCursor()
         self.cursor_hasSelection = cursor.hasSelection()
 
-        self.find_edit = QLineEdit()
-        self.replace_edit = QLineEdit()
+        # Заменяем QLineEdit на QComboBox для истории поиска
+        self.find_edit = QComboBox()
+        self.find_edit.setEditable(True)  # Разрешаем редактирование
+        self.find_edit.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)  # Новые элементы в начало
+        self.find_edit.setMaxCount(20)  # Максимум 20 элементов в истории
+        self.find_edit.setDuplicatesEnabled(False)  # Не допускать дубликаты
+
+        self.replace_edit = QComboBox()
+        self.replace_edit.setEditable(True)
+        self.replace_edit.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
+        self.replace_edit.setMaxCount(20)
+        self.replace_edit.setDuplicatesEnabled(False)
+
+        # Загружаем историю из настроек
+        self.load_history()
 
         # Флаги поиска
-        self.case_checkbox = QCheckBox(  localizationF("Case_sensitive", "Case sensitive"))
+        self.case_checkbox = QCheckBox(localizationF("Case_sensitive", "Case sensitive"))
         self.case_checkbox.setChecked(True)
-        self.word_checkbox = QCheckBox(  localizationF("Whole_words", "Whole words"))
+        self.word_checkbox = QCheckBox(localizationF("Whole_words", "Whole words"))
         self.word_checkbox.setChecked(False)
-        self.selection_checkbox = QCheckBox(  localizationF("In_selection_only", "In selection only"))
+        self.selection_checkbox = QCheckBox(localizationF("In_selection_only", "In selection only"))
         self.selection_checkbox.setChecked(False)
 
         # Кнопки поиска
         btn_layout = QHBoxLayout()
-        self.find_btn_prev = QPushButton(  localizationF("Find_previous", "Find previous"))
-        self.find_btn = QPushButton(  localizationF("Find_next", "Find next"))              
+        self.find_btn_prev = QPushButton(localizationF("Find_previous", "Find previous"))
+        self.find_btn = QPushButton(localizationF("Find_next", "Find next"))              
         btn_layout.addWidget(self.find_btn_prev)
         btn_layout.addWidget(self.find_btn)
 
-        layout.addWidget(QLabel(  localizationF("Find_string", "Find string:")))
+        layout.addWidget(QLabel(localizationF("Find_string", "Find string:")))
         layout.addWidget(self.find_edit)
         layout.addLayout(btn_layout)
+        
         if self.cursor_hasSelection: # выбор только в выделении если это выделение было
             layout.addWidget(self.selection_checkbox)
             txt = cursor.selectedText()
             if not any(c in txt for c in {'\n', '\r', '\u2028', '\u2029'}):
-                self.find_edit.setText(cursor.selectedText())
+                self.find_edit.setCurrentText(cursor.selectedText())
+        
         layout.addWidget(self.case_checkbox)
         layout.addWidget(self.word_checkbox)
         
 
-        layout.addWidget(QLabel(  localizationF("Replace_with_string","Replace with string:")))
+        layout.addWidget(QLabel(localizationF("Replace_with_string","Replace with string:")))
         layout.addWidget(self.replace_edit)
-        self.replace_btn = QPushButton(  localizationF("Replace","Replace"))
-        self.replace_all_btn = QPushButton( localizationF("Replace_All", "Replace All"))
+        self.replace_btn = QPushButton(localizationF("Replace","Replace"))
+        self.replace_all_btn = QPushButton(localizationF("Replace_All", "Replace All"))
         layout.addWidget(self.replace_btn)
         layout.addWidget(self.replace_all_btn)
 
@@ -616,13 +837,61 @@ class FindReplaceDialog(QDialog):
         self.replace_btn.clicked.connect(self.replace_one)
         self.replace_all_btn.clicked.connect(self.replace_all)
         
+        self.find_edit.lineEdit().selectAll()
+        self.replace_edit.lineEdit().selectAll()
+
         self.selection_start = cursor.selectionStart()
         self.selection_end = cursor.selectionEnd()
         self.find1 = True
         self.find_btn.setDefault(True)  # Сделать find_btn активной по умолчанию
 
-         
- 
+
+    def load_history(self):
+        """Загружает историю поиска и замены из настроек"""
+        try:
+            # Загрузка истории поиска
+            find_history = mw.pm.profile.get('find_replace_find_history', [])
+            for item in find_history:
+                self.find_edit.addItem(item)
+            
+            # Загрузка истории замены
+            replace_history = mw.pm.profile.get('find_replace_replace_history', [])
+            for item in replace_history:
+                self.replace_edit.addItem(item)
+        except:
+            pass
+
+
+    def save_history(self):
+        """Сохраняет историю поиска и замены в настройки"""
+        try:
+            # Сохраняем историю поиска
+            find_history = []
+            for i in range(min(self.find_edit.count(), 20)):  # Сохраняем до 20 элементов
+                find_history.append(self.find_edit.itemText(i))
+            mw.pm.profile['find_replace_find_history'] = find_history
+            
+            # Сохраняем историю замены
+            replace_history = []
+            for i in range(min(self.replace_edit.count(), 20)):
+                replace_history.append(self.replace_edit.itemText(i))
+            mw.pm.profile['find_replace_replace_history'] = replace_history
+        except:
+            pass
+
+
+    def add_to_history(self, combo_box, text):
+        """Добавляет текст в историю комбобокса"""
+        if text.strip():  # Не добавляем пустые строки
+            # Удаляем если уже существует
+            index = combo_box.findText(text)
+            if index >= 0:
+                combo_box.removeItem(index)
+            # Добавляем в начало
+            combo_box.insertItem(0, text)
+            combo_box.setCurrentIndex(0)
+
+
     def get_flags(self):
         if pyqt_version == "PyQt6":
             flags = QTextDocument.FindFlag(0)
@@ -638,8 +907,15 @@ class FindReplaceDialog(QDialog):
                 flags |= QTextDocument.FindWholeWords
         return flags
 
+
     def find_prev(self) -> bool:
-        text = self.find_edit.text()
+        text = self.find_edit.currentText().strip()
+        if not text:
+            return False
+        
+        # Добавляем в историю
+        self.add_to_history(self.find_edit, text)
+        
         flags = self.get_flags() | FindBackward
         cursor = self.editor.textCursor()              
         if self.selection_checkbox.isChecked() and self.cursor_hasSelection: # Поиск только в выделенном
@@ -673,7 +949,13 @@ class FindReplaceDialog(QDialog):
 
 
     def find_next(self) -> bool:
-        text = self.find_edit.text()
+        text = self.find_edit.currentText().strip()
+        if not text:
+            return False
+        
+        # Добавляем в историю
+        self.add_to_history(self.find_edit, text)
+        
         flags = self.get_flags()
         cursor = self.editor.textCursor()                
         if self.selection_checkbox.isChecked() and self.cursor_hasSelection: # Поиск только в выделенном
@@ -700,16 +982,21 @@ class FindReplaceDialog(QDialog):
         else:            
             found = self.editor.find(text, flags)
             if not found:
-
                 msg = localizationF("notfound", "Not found")
                 tooltip(f"<p style='color: yellow; background-color: black'>{msg}</p>")
                 return False
             return True
 
+
     def replace_one(self) -> bool:
         self.find1 = False
-        text = self.find_edit.text()
-        replace = self.replace_edit.text()
+        text = self.find_edit.currentText().strip()
+        replace = self.replace_edit.currentText()
+        
+        if text:  # Добавляем в историю только если есть что искать
+            self.add_to_history(self.find_edit, text)
+            self.add_to_history(self.replace_edit, replace)
+        
         cursor = self.editor.textCursor()
         if cursor.hasSelection(): 
             cursor.insertText(replace)
@@ -718,8 +1005,13 @@ class FindReplaceDialog(QDialog):
 
     def replace_all(self):
         self.find1 = False
-        text = self.find_edit.text()
-        replace = self.replace_edit.text()
+        text = self.find_edit.currentText().strip()
+        replace = self.replace_edit.currentText()
+        
+        if text:  # Добавляем в историю только если есть что искать
+            self.add_to_history(self.find_edit, text)
+            self.add_to_history(self.replace_edit, replace)
+        
         flags = self.get_flags()
         cursor = self.editor.textCursor()                
         if self.selection_checkbox.isChecked() and self.cursor_hasSelection:
@@ -754,6 +1046,12 @@ class FindReplaceDialog(QDialog):
             tooltip(f"<p style='color: yellow; background-color: black'>{msg}: {n}</p>")
 
 
+    def closeEvent(self, event):
+        """Сохраняем историю при закрытии диалога"""
+        self.save_history()
+        super().closeEvent(event)
+
+
 
 def show_find_replace_dialog(edit_area):
     global findStrT
@@ -762,8 +1060,8 @@ def show_find_replace_dialog(edit_area):
         dialog.exec()
     else:
         dialog.exec_()
-    if dialog.find_edit.text() != "":
-        findStrT = dialog.find_edit.text() 
+    if dialog.find_edit.currentText() != "":
+        findStrT = dialog.find_edit.currentText()
         
 
 
@@ -886,15 +1184,43 @@ def logError(e):
     tooltip(f"<p style='color: yellow; background-color: black'>{logs.error_count} ERRORS, last one: {e}<br>See in file: {logs.get_log_file()}</p>")
 
 
-def ask_user_for_text(dialog, title="Brief information that you can understand", label="Enter a hint:", default_text=""):
-    """Запрашивает текстовое значение у пользователя."""
-    if pyqt_version == "PyQt6":
-        text, ok = QInputDialog.getText(dialog, title, label, QLineEdit.EchoMode.Normal, default_text)
-    else:  # PyQt5
-        text, ok = QInputDialog.getText(dialog, title, label, QLineEdit.Normal, default_text)    
-    if ok:  # Если пользователь нажал "OK"
+
+def ask_user_for_text_find(dialog, title="Brief information that you can understand", 
+                     label="Enter a hint:", default_text=""):
+    """Запрашивает текстовое значение у пользователя с историей."""
+    input_dialog_with_history = InputDialogWithHistory(nameH="ask_user_for_text_find")    
+    text, ok = input_dialog_with_history.getText(dialog, title, label, default_text)    
+    if ok:
         return text
-    return None  # Если пользователь нажал "Cancel"
+    return None
+
+def ask_user_for_text_goto(dialog, title="Brief information that you can understand", 
+                     label="Enter a hint:", default_text=""):
+    """Запрашивает текстовое значение у пользователя с историей."""
+    global template_name, gl_model_name
+    GotonameH = ""    
+    if html_js_highlighting_addon.current_button == "front_button":
+        suffix = "_front"
+        GotonameH = template_name + suffix        
+    elif html_js_highlighting_addon.current_button == "back_button":
+        suffix = "_back"
+        GotonameH = template_name + suffix
+    else:
+        suffix = "_style"
+        GotonameH = gl_model_name + suffix     
+        
+    input_dialog_with_history = InputDialogWithHistory(nameH=GotonameH)    
+    text, ok = input_dialog_with_history.getText(dialog, title, label, default_text)    
+    if ok:
+        return text
+    return None
+
+
+
+
+
+
+
 
 
 findStrT = "" # подстрока которую будем искать
@@ -961,9 +1287,9 @@ def findT(editor, dialog):
     find_t = localizationF("Find_tooltip", "Enter a substring")
     seltxt = editor.textCursor().selectedText()
     if len(seltxt) == 0: 
-        user_find = ask_user_for_text(dialog, find, find_t, findStrT) # ввод от пользователя строки 
+        user_find = ask_user_for_text_find(dialog, find, find_t, findStrT) # ввод от пользователя строки 
     else:
-        user_find = ask_user_for_text(dialog, find, find_t, seltxt) # ввод от пользователя строки 
+        user_find = ask_user_for_text_find(dialog, find, find_t, seltxt) # ввод от пользователя строки 
     if user_find is None or not user_find.strip():
         return
     findStrT = user_find
@@ -1030,9 +1356,9 @@ def gotoN(editor, dialog):
             return False
 
     if len(seltxt) == 0 or not is_int(seltxt.strip()):
-        user_find = ask_user_for_text(dialog, goto, gotoEnt, gotoNStr)
+        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, gotoNStr)
     else:
-        user_find = ask_user_for_text(dialog, goto, gotoEnt, seltxt.strip())
+        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, seltxt.strip())
 
     if user_find is None or not user_find.strip():
         return
@@ -1072,8 +1398,8 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         self.current_line_format = QTextCharFormat()
         self.current_line_format.setBackground(QColor(colors["current_line_color"]))
 
-        self.mult_block_start = ["<!--", "/*", "`", "$"]
-        self.mult_block_end = ["-->", "*/", "`", "$"]
+        self.mult_block_start = ["<!--", "/*", "= `", "=`"]
+        self.mult_block_end = ["-->", "*/", "`", "`"]
         self.mult_block_idx = -1 # =ru= индекс блока
 
         self.highlighting_rules = [] # =ru= правила раскрашивания строки     
@@ -1219,8 +1545,10 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         
         self.add_highlighting_rule(R"\.[a-zA-Z\$_][a-zA-Z0-9\$\-_]*\b", css_class_color) 
         self.add_highlighting_rule(R"#\b[a-zA-Z\$_][a-zA-Z0-9\$\-_]*\b", css_id_color)      
-        self.add_highlighting_rule(R"[^\.#:]\b([a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b):", css_property_color)              
-        self.add_highlighting_rule(R"[^\.#:]\b[a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b:\s+([^;\>]*)[;\>]", self.string_color)
+        # self.add_highlighting_rule(R"[^\.#:]\b([a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b):", css_property_color)              
+        self.add_highlighting_rule(R"^\s*\b([a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b):", css_property_color)              
+        # self.add_highlighting_rule(R"[^\.#:]\b[a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b:\s+([^;\>]*)[;\>]", self.string_color)
+        self.add_highlighting_rule(R"^\s*\b[a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b:\s+([^;\>]*)[;\>]", self.string_color)
 
         self.add_highlighting_rule(R"(\b[a-zA-Z\$\-_][a-zA-Z0-9\$\-_]*\b\s*)\(", name_function_color)               
         # self.add_highlighting_rule(R"-?\b(?:\d+(?:\.\d+)?(?:e[+-]?\d+)?|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)\b", number_color) всё 1asdf считать надо за число а это не пойдет
@@ -1232,7 +1560,10 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         self.add_highlighting_rule(R"[\(\)]", brackets_round_color)
         self.add_highlighting_rule(R"[\[\]]", brackets_square_color)
 
-        # подсветка для строк  (смотри уже в def highlightBlock(self, text): )          
+        # подсветка для строк  (смотри в def highlightBlock(self, text): для некоторых там может быть )    
+        # self.add_highlighting_rule(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"", self.string_color)      
+        # self.add_highlighting_rule(r"'[^'\\]*(?:\\.[^'\\]*)*'", self.string_color) 
+        # self.add_highlighting_rule(r"`[^`\\]*(?:\\.[^`\\]*)*`", self.string_color) 
         
         #подсветка ограничивающих символов строк
         self.add_highlighting_rule(R"[\"'`]", self.string_color)
@@ -1283,7 +1614,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         """Повторно подсвечивает весь код."""
         if self.cur_edit_area and self.cur_edit_area.highlighter:   
             # Устанавливаем курсор в режим "песочные часы"
-            QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            QGuiApplication.setOverrideCursor(WaitCursor)
             try:
                 self.edit_area_highlighterF4_text = self.edit_area_selected_text
                 # Выполняем подсветку
@@ -1348,6 +1679,37 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
     
                           
 
+    def isInsideQuotes(self, text, position):
+        """
+        =ru= Проверяет, находится ли позиция внутри кавычек
+        Учитывает экранированные кавычки \", \'
+        """
+        single_quote = False
+        double_quote = False
+        backtick = False
+        escape = False
+        
+        for i in range(position):
+            char = text[i]
+            
+            if escape:
+                escape = False
+                continue
+                
+            if char == '\\':
+                escape = True
+                continue
+                
+            if char == "'":
+                single_quote = not single_quote
+            elif char == "\"":
+                double_quote = not double_quote
+            elif char == "`":
+                backtick = not backtick
+        
+        return single_quote or double_quote or backtick
+    
+
     def highlightBlockIdx(self, text, idx, findComm = True):
         """=ru= Метод для раскрашивания блока с частичным смещением """
         if text is None or len(text) == 0:
@@ -1365,12 +1727,12 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                     newidx = fendidx + len(end)
                     text1 = text[:newidx]
                     text2 = text[newidx:] 
-                    self.setFormat(idx, len(text1)+ len(end), self.comment_color)
+                    self.setFormat(idx, len(text1)+ len(end), self.comment_color if bidx < 2 else self.string_color )                    
                     self.highlightBlockIdxComm(text1, idx) # раскраска даже в комментариях
                     self.highlightBlockIdx(text2, idx + newidx)                    
                     return
                 else: # вся строка комментарий
-                    self.setFormat(idx, len(text), self.comment_color)
+                    self.setFormat(idx, len(text), self.comment_color if bidx < 2 else self.string_color)
                     self.highlightBlockIdxComm(text, idx) # раскраска даже в комментариях
                     return
             else: # комментарий еще не найден, надо искать
@@ -1379,18 +1741,43 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                 match = self.mult_block_start_regex.search(text)
                 if match:
                     found = match.group()
-                    bidx = self.mult_block_start.index(found) 
-                    start_index = match.start() 
-                    # нашли, то обработка разделяется на до и после                           
-                    lenStBl = len( self.mult_block_start[bidx] )
-                    text1 = text[:start_index]
-                    text2 = text[start_index+lenStBl:] 
+                    match_pos = match.start()                      
+                    
+                    # ПРОВЕРКА: находится ли найденный блок внутри кавычек?
+                    if self.isInsideQuotes(text, match_pos):
+                        # Пропускаем этот match и ищем следующий
+                        remaining_text = text[match_pos + len(found):]
+                        next_match = self.mult_block_start_regex.search(remaining_text)
+                        if next_match:
+                            # Рекурсивно обрабатываем оставшийся текст
+                            text_before = text[:match_pos + len(found)]
+                            text_after = text[match_pos + len(found):]
+                            self.highlightBlockIdx(text_before, idx, False)
+                            self.highlightBlockIdx(text_after, idx + len(text_before), True)
+                        return
+                    
+                    # ПРОВЕРКА: если это // и перед ним не стоит :                    
+                    if (found == "//") and (match_pos == 0 or (match_pos > 0 and text[match_pos-1] != ":")):
+                        # Однострочный комментарий
+                        pass
+                    else:
+                        bidx = self.mult_block_start.index(found) 
+                        start_index = match.start() 
+                        # нашли, то обработка разделяется на до и после                           
+                        lenStBl = len( self.mult_block_start[bidx] )
+                        text1 = text[:start_index]
+                        text2 = text[start_index+lenStBl:] 
 
-                    self.highlightBlockIdx(text1, idx, False) # тут нет комментария, можно повторно не проверять начало
-                    self.setFormat(idx + start_index, lenStBl, self.comment_color)
-                    self.mult_block_idx = bidx # показываем, что комментарий уже найден и надо искать его конец
-                    self.highlightBlockIdx(text2, idx + start_index + lenStBl)                    
-                    return
+                        self.highlightBlockIdx(text1, idx, False) # тут нет комментария, можно повторно не проверять начало
+                        # не включаем равно для поиска = `
+                        if found[0]=="=":
+                            self.setFormat(idx + start_index+1, lenStBl-1, self.comment_color if bidx < 2 else self.string_color)
+                        else:
+                            self.setFormat(idx + start_index, lenStBl, self.comment_color if bidx < 2 else self.string_color)
+                        self.mult_block_idx = bidx # показываем, что комментарий уже найден и надо искать его конец
+                        self.highlightBlockIdx(text2, idx + start_index + lenStBl)                    
+                        return
+
 
         # надо обработать все правила, так как это не комментарий
         if pyqt_version == "PyQt6":
@@ -1424,23 +1811,35 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
 
     def highlight_simple_strings(self, text, offset):
-        """Подсветка строковых значений без исключений."""
-        regex1 = QRegularExpression(r'"[^"\\]*(?:\\.[^"\\]*)*"')
+        """Подсветка строковых значений без исключений."""                        
+        regex1 = QRegularExpression(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
         regex2 = QRegularExpression(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
+        regex3 = QRegularExpression(r"`[^`\\]*(?:\\.[^`\\]*)*`")  
+
         regex1.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
         regex2.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+        regex3.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
         iterator = regex1.globalMatch(text)
         while iterator.hasNext():
             match = iterator.next()
             start = match.capturedStart()
             length = match.capturedLength()
             self.setFormat(offset + start, length, self.string_color)
+            self.highlightBlockIdxComm(text, offset) # раскраска даже в комментариях
         iterator = regex2.globalMatch(text)
         while iterator.hasNext():
             match = iterator.next()
             start = match.capturedStart()
             length = match.capturedLength()
             self.setFormat(offset + start, length, self.string_color)
+            self.highlightBlockIdxComm(text, offset) # раскраска даже в комментариях
+        iterator = regex3.globalMatch(text)
+        while iterator.hasNext():
+            match = iterator.next()
+            start = match.capturedStart()
+            length = match.capturedLength()
+            self.setFormat(offset + start, length, self.string_color)
+            self.highlightBlockIdxComm(text, offset) # раскраска даже в комментариях
 
 
     def highlightBlock(self, text):   
@@ -1450,15 +1849,16 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         if self.currentBlock().blockNumber() == 0:
             self.mult_block_idx = -1 # =ru= индекс блока            
 
-        self.highlightBlockIdx(text, 0)
+        self.highlightBlockIdx(text, 0)              
 
-                
+        
 
         # Регулярные выражения для поиска
         on_regex = re.compile(r"\bon[a-zA-Z]{3,16}\s*=\s*")
         style_regex = re.compile(r"(\bstyle\s*=\s*)|(\bid\s*=\s*)|(\bclass\s*=\s*)")
         quotes_regex1 = re.compile(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
         quotes_regex2 = re.compile(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
+        quotes_regex3 = re.compile(r"`[^`\\]*(?:\\.[^`\\]*)*`")  
         position = 0
         lenText = len(text)
         cntErr = 10000
@@ -1472,21 +1872,29 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             # Выбираем минимальную позицию
             next_pos = min(pos for pos in [on_pos, style_pos] if pos != -1) if on_pos != -1 or style_pos != -1 else lenText
             # Обрабатываем текст до найденной позиции
-            sub_text = text[position:next_pos]
+            sub_text = text[position:next_pos]            
             self.highlight_simple_strings(sub_text, position)
-            position = next_pos
+            position = next_pos            
             # Пропускаем найденное слово и его значение в кавычках
-            if position < lenText:
+            if position < lenText:                
                 match1 = quotes_regex1.search(text, position)                
                 match2 = quotes_regex2.search(text, position)                  
+                match3 = quotes_regex3.search(text, position)  
+                posN = -1
                 pos1 = match1.start() if match1 else -1
+                if pos1 != -1:
+                    position = match1.end()                 
+                    posN = pos1 
                 pos2 = match2.start() if match2 else -1
-                if pos1 != -1 and (pos2 == -1 or pos1 < pos2):                    
-                    position = match1.end()
-                elif pos2 != -1:                    
+                if pos2 != -1 and (pos2 < posN or posN == -1):
                     position = match2.end()
-                else:
-                    position += 1                   
+                    posN = pos2
+                pos3 = match3.start() if match3 else -1
+                if pos3 != -1 and (pos3 < posN or posN == -1):
+                    position = match3.end()
+                    posN = pos3
+                if posN == -1:
+                    position += 1                                         
 
             cntErr -= 1
             if(cntErr <= 0):
@@ -1498,7 +1906,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         if position < lenText:
             self.highlight_simple_strings(text[position:], position)
 
-
+               
 
         # Подсветка слов с цветами #
         color_regex = QRegularExpression( r'#[a-fA-F0-9]{3,8}\b' )
@@ -1514,13 +1922,14 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             fmt.setBackground(qcolor)
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(Qt.GlobalColor.white)
+                fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(Qt.GlobalColor.black)
+                fmt.setForeground(GC_black)
             self.setFormat(match.capturedStart(0), match.capturedLength(0), fmt)
 
         # Подсветка слов заданные словом цвета               
-        color_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})(?:[;"\'])' )
+        #color_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})(?:[;"\'])' ) убрал, сделаем проще
+        color_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})\b' )
         color_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
         color_iter = color_regex.globalMatch(text)
         while color_iter.hasNext():
@@ -1533,9 +1942,9 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             fmt.setBackground(qcolor)
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(Qt.GlobalColor.white)
+                fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(Qt.GlobalColor.black)
+                fmt.setForeground(GC_black)
             self.setFormat(match.capturedStart(1), match.capturedLength(1), fmt)    
 
         # Подсветка слов с rgb shl
@@ -1552,9 +1961,9 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             fmt.setBackground(qcolor)
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(Qt.GlobalColor.white)
+                fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(Qt.GlobalColor.black)
+                fmt.setForeground(GC_black)
             #self.setFormat(match.capturedStart(0), match.capturedLength(0), fmt)
             self.setFormat(match.capturedStart(0), 4, fmt)
 
@@ -1615,6 +2024,8 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         while attBg_iter.hasNext():
             match = attBg_iter.next()
             self.setFormat(match.capturedStart(0), match.capturedLength(0), self.keyword_attention_colorBlue)
+      
+
 
 
 
@@ -1837,7 +2248,42 @@ class HtmlJavaScriptHighlightingAddon:
             # JavaScript DOM API
             "document", "window", "navigator", "getElementById", "querySelector", 
             "addEventListener", "removeEventListener", "dispatchEvent", "localStorage", 
-            "sessionStorage", "fetch", "Request", "Response", "Headers"
+            "sessionStorage", "fetch", "Request", "Response", "Headers",
+
+            # Добавлено еще 2025_09_10
+            "allSettled", "ankiTtsSetLanguage", "ankiTtsSpeak", "ankiTtsStop", "any",
+            "appendChild", "assign", "cancelAnimationFrame", "cancelIdleCallback", "center",
+            "charCodeAt", "checkValidity", "classList", "clientHeight", "clientLeft",
+            "clientTop", "clientWidth", "cloneNode", "closest", "codePointAt",
+            "console", "contains", "create", "createDocumentFragment", "createElement",
+            "createTextNode", "cssRules", "currentTarget", "defineProperties", "deleteRule",
+            "endsWith", "exec", "exitFullscreen", "findLast", "findLastIndex",
+            "flat", "flatMap", "freeze", "fromCharCode", "fromCodePoint",
+            "fromEntries", "geolocation", "getAttribute", "getAttributeNode", "getBoundingClientRect",
+            "getClientRects", "getComputedStyle", "getDate", "getElementsByClassName", "getElementsByTagName",
+            "getOwnPropertyDescriptor", "getOwnPropertyDescriptors", "getOwnPropertyNames", "getOwnPropertySymbols", "getPrototypeOf",
+            "getTime", "getTimezoneOffset", "getUserMedia", "getUTCDate", "hasAttribute",
+            "hasChildNodes", "hostname", "innerHTML", "insertAdjacentElement", "insertAdjacentHTML",
+            "insertAdjacentText", "insertBefore", "insertRule", "isArray", "isExtensible",
+            "isFrozen", "isSealed", "localeCompare", "location", "match",
+            "matchAll", "matches", "matchMedia", "normalize", "offsetHeight",
+            "offsetLeft", "offsetParent", "offsetTop", "offsetWidth", "onchange",
+            "onclick", "ondblclick", "onfocus", "oninput", "onkeydown",
+            "onkeyup", "onload", "onmouseover", "onresize", "onsubmit",
+            "outerHTML", "padEnd", "padStart", "parentElement", "parentNodetoLocaleLowerCase",
+            "preventDefault", "preventExtensions", "querySelectorAll", "querySelectorAll", "race",
+            "reject", "removeAttribute", "removeAttributeNode", "removeChild", "repeat",
+            "replace", "replaceAll", "replaceChild", "reportValidity", "requestAnimationFrame",
+            "requestFullscreen", "requestIdleCallback", "resolve", "scrollBy", "scrollHeight",
+            "scrollIntoView", "scrollLeft", "scrollTo", "scrollTop", "scrollWidth",
+            "seal", "search", "selectedIndex", "selectedOptions", "setAttribute",
+            "setAttributeNode", "setCustomValidity", "setDate", "setPrototypeOf", "setTime",
+            "setUTCDate", "speak", "SpeechSynthesisUtterance", "startsWith", "stopImmediatePropagation",
+            "styleSheets", "substring", "test", "textContent", "toDateString",
+            "toggleAttribute", "toJSON", "toLocaleDateString", "toLocaleLowerCase", "toLocaleTimeString",
+            "toLocaleUpperCase", "toLowerCase", "toTimeString", "toUpperCase", "toUTCString",
+            "trim", "trimEnd", "trimLeft", "trimRight", "trimStart",
+            "valueAsDate", "valueAsNumber"
         ]
         # убираем дубли если будет и отсортируем
         self.html_tags = sorted(list(set(self.html_tags)))
@@ -1858,6 +2304,137 @@ class HtmlJavaScriptHighlightingAddon:
         # Через 100 мс вызываем подсветку пары
         self.sel_par_timer.stop()        
         self.sel_par_timer.start()
+
+
+    def find_first_backslash_position(self, text, pos_in_line):
+        """
+        Ищет с конца строки первое вхождение из 2 символов "\\\\" (ближайшее к началу строки),
+        которое не является частью ":\\\\", игнорируя символы внутри 
+        строковых литералов и комментариев.
+        
+        Args:
+            text: строка для поиска
+            pos_in_line: позиция, с которой начинать поиск (обычно позиция курсора)
+        
+        Returns:
+            int: позиция найденного "\\\\" или -1 если не найдено
+        """
+        if pos_in_line <= 1:  # Нужно как минимум 2 символа для поиска
+            return -1
+        
+        i = pos_in_line - 1  # начинаем с позиции перед курсором
+        stack = []  # стек для отслеживания открытых строк/комментариев
+        found_pos = -1  # позиция найденной пары обратных слешей
+        
+        while i >= 1:  # Нужно как минимум 2 символа для проверки
+            char = text[i]
+            
+            # Проверяем, находимся ли мы внутри строки/комментария
+            if stack:
+                # Если внутри строки/комментария, проверяем закрытие
+                top = stack[-1]
+                
+                if top == '`' and char == '`':
+                    # Проверяем экранирование для ` (нет экранирования в `)
+                    stack.pop()
+                    i -= 1
+                    continue
+                    
+                elif top == '"' and char == '"':
+                    # Проверяем экранирование для "
+                    if i > 0 and text[i-1] == '\\':
+                        # Экранированная кавычка, пропускаем
+                        i -= 2
+                        continue
+                    else:
+                        stack.pop()
+                        i -= 1
+                        continue
+                        
+                elif top == "'" and char == "'":
+                    # Проверяем экранирование для '
+                    if i > 0 and text[i-1] == '\\':
+                        # Экранированная кавычка, пропускаем
+                        i -= 2
+                        continue
+                    else:
+                        stack.pop()
+                        i -= 1
+                        continue
+                        
+                elif top == '*/' and i >= 1 and text[i-1:i+1] == '/*':
+                    # Закрытие многострочного комментария
+                    stack.pop()
+                    i -= 2
+                    continue
+                    
+                elif top == '-->' and i >= 3 and text[i-3:i+1] == '<!--':
+                    # Закрытие HTML комментария
+                    stack.pop()
+                    i -= 4
+                    continue
+                    
+                # Если внутри строки/комментария, просто пропускаем символ
+                i -= 1
+                continue
+            
+            # Если не внутри строки/комментария, проверяем открытие
+            if char == '`':
+                stack.append('`')
+                i -= 1
+                continue
+                
+            elif char == '"':
+                # Проверяем экранирование
+                if i > 0 and text[i-1] == '\\':
+                    # Экранированная кавычка, не открываем строку
+                    i -= 2
+                    continue
+                else:
+                    stack.append('"')
+                    i -= 1
+                    continue
+                    
+            elif char == "'":
+                # Проверяем экранирование
+                if i > 0 and text[i-1] == '\\':
+                    # Экранированная кавычка, не открываем строку
+                    i -= 2
+                    continue
+                else:
+                    stack.append("'")
+                    i -= 1
+                    continue
+                    
+            elif i >= 1 and text[i-1:i+1] == '*/':
+                stack.append('*/')
+                i -= 2
+                continue
+                
+            elif i >= 3 and text[i-3:i+1] == '<!--':
+                stack.append('-->')
+                i -= 4
+                continue
+                
+            # Ищем два обратных слеша подряд
+            elif i >= 1 and text[i-1] == '\\' and char == '\\':
+                # Проверяем, не является ли это частью ':\\\\'
+                if i >= 2 and text[i-2] == ':':
+                    # Это ':\\\\', пропускаем
+                    i -= 3
+                    continue
+                else:
+                    # Нашли '\\\\', запоминаем позицию первого слеша
+                    found_pos = i - 1
+                    # Продолжаем искать ближе к курсору
+                    i -= 2
+                    continue
+                    
+            i -= 1
+        
+        return found_pos
+
+
 
     def highlight_pair(self, edit_area):        
         """подсветка парных скобок, тегов"""
@@ -1885,9 +2462,9 @@ class HtmlJavaScriptHighlightingAddon:
         else:
             char = sel[0]
         
-        pairs = {'<': '>', '{': '}', '(': ')', '[': ']', '>': '<', '}': '{', ')': '(', ']': '['}
-        open_chars = '<{(['
-        close_chars = '>})]'
+        pairs = {'<': '>', '{': '}', '(': ')', '[': ']', '}': '{', ')': '(', ']': '['}
+        open_chars = '{(['
+        close_chars = '})]'
 
         if char in open_chars:
             direction = 1
@@ -1905,18 +2482,26 @@ class HtmlJavaScriptHighlightingAddon:
                 stack = 1                
                 cur = QTextCursor(edit_area.document())                                
                 cur.setPosition(cursor.selectionStart())
+                next_c = ""
                 prev_c = ""
                 comm = False
-                find_comm = ""
+                find_comm = ""                
                 len_find_comm = 0
-                findNR = False
-                findSS = False
+                findNR = False    
+                nextN = 0            
                 n = 0
                 while True:
                     moved = cur.movePosition(NextCharacter if direction == 1 else PreviousCharacter)
                     if not moved:
                         break
                     c = cur.document().characterAt(cur.position())
+                    next_c = ""
+                    if direction == -1: # если назад поиск, то заглянем на 1 далее
+                        movedN = cur.movePosition(PreviousCharacter)
+                        if movedN:
+                            next_c = cur.document().characterAt(cur.position())
+                            cur.movePosition(NextCharacter) # возрат позиции назад
+
                     prev_c += c
                     if c == "\u2029": # PARAGRAPH SEPARATOR.
                         findNR = True                                            
@@ -1926,16 +2511,57 @@ class HtmlJavaScriptHighlightingAddon:
                         prev_c = prev_c[-5:]
                         n = 5
 
-                    if findSS: # проматываем к // если поиск с конца в начало
-                        s2 = prev_c[-2:]
-                        if s2 == "//":
-                            findSS = False                            
+                    if nextN != 0: # проматываем к // если поиск с конца в начало
+                        if nextN > 0:
+                            nextN -= 1                           
                         continue 
 
                     if not comm:
                         if direction == 1:
+                            if n == 1:
+                                s1 = prev_c[-1:] 
+                                if s1 == "'":
+                                    comm = True
+                                    find_comm = "'"
+                                    len_find_comm = 1
+                                    continue   
+                                if s1 == '"':
+                                    comm = True
+                                    find_comm = '"'
+                                    len_find_comm = 1
+                                    continue   
+                                if s1 == '`':
+                                    comm = True
+                                    find_comm = '`'
+                                    len_find_comm = 1
+                                    continue 
+
+                            if n == 2:   
+                                s2 = prev_c[-2:]  
+                                if s2 == "//":
+                                    comm = True
+                                    find_comm = "\u2029" # PARAGRAPH SEPARATOR.
+                                    len_find_comm = 1
+                                    continue  
+
                             if n >= 2:
-                                s2 = prev_c[-2:]
+                                s1 = prev_c[-1:]
+                                s2 = prev_c[-2:] 
+                                if s1 == "'" and s2 != "\\'":
+                                    comm = True
+                                    find_comm = "'"
+                                    len_find_comm = 1
+                                    continue   
+                                if s1 == '"' and s2 != '\\"':
+                                    comm = True
+                                    find_comm = '"'
+                                    len_find_comm = 1                                    
+                                    continue    
+                                if s1 == '`':
+                                    comm = True
+                                    find_comm = '`'
+                                    len_find_comm = 1
+                                    continue                                                             
                                 if s2 == "//" and (n ==2 or prev_c[-3:] != "://"):
                                     comm = True
                                     find_comm = "\u2029" # PARAGRAPH SEPARATOR.
@@ -1945,58 +2571,112 @@ class HtmlJavaScriptHighlightingAddon:
                                     comm = True
                                     find_comm = "*/"
                                     len_find_comm = 2
-                                    continue
+                                    continue    
+
+                            if n >= 3:
+                                s2 = prev_c[-2:]
+                                s3 = prev_c[-3:] 
+                                if s2 == "//" and s3 != "://":
+                                    comm = True
+                                    find_comm = "\u2029" # PARAGRAPH SEPARATOR.
+                                    len_find_comm = 1
+                                    continue                                
+
                             if n >= 4: 
                                 if prev_c[-4:] == "<!--":                            
                                     find_comm = "-->"
                                     len_find_comm = 3
-                                    if char == "<":
-                                        stack -= 1
+                                    # if char == "<":
+                                    #     stack -= 1
                                     continue
-                        else: # поиск назад
-                            if n >= 2:                                
-                                if findNR and c != "\u2029" and c != "\u2028":                                     
-                                    findNR = False
-                                    findSS = False                                    
-                                    cur_line = cur.block().text() # Получаем текущую строку, где находится курсор                                    
-                                    pos_in_line = cur.position() - cur.block().position() # Позиция курсора в строке                                    
-                                    idx = cur_line.find("//") # Проверяем, есть ли // в строке до позиции курсора
-                                    # если найдено будет :// то это не комментарий, а URL
-                                    if (idx < 1 or cur_line[idx-1] != ":") and (idx != -1) and (idx < pos_in_line):
-                                        # После // не должно быть */ и -->
-                                        after = cur_line[idx+2:]
-                                        if "*/" not in after and "-->" not in after:
-                                            findNR = True                                            
-                                            continue                                    
 
-                                s2 = prev_c[-2:]
-                                if s2 == "//":
+                        else: # поиск назад
+                            if n == 1 or (findNR and c != "\u2029" and c != "\u2028"):
+                                findNR = False
+                                nextN = 0
+                                cur_line = cur.block().text() # Получаем текущую строку, где находится курсор 
+                                pos_in_line = cur.position() - cur.block().position() # Позиция курсора в строке 
+                                backslash_pos = self.find_first_backslash_position(cur_line, pos_in_line)
+                                if backslash_pos != -1:
+                                    nextN = pos_in_line - backslash_pos; 
+                                    continue     
+
+                            if n >= 1:
+                                s1 = prev_c[-1:] 
+                                if s1 == "'" and next_c != "\\":
                                     comm = True
-                                    find_comm = "\u2029" # PARAGRAPH SEPARATOR  
+                                    find_comm = "'"
+                                    len_find_comm = 1
+                                    continue   
+                                if s1 == '"' and next_c != "\\":
+                                    comm = True
+                                    find_comm = '"'
                                     len_find_comm = 1
                                     continue
+                                if s1 == '`':
+                                    comm = True
+                                    find_comm = '`'
+                                    len_find_comm = 1
+                                    continue
+                            if n >= 2:
+                                s2 = prev_c[-2:]
                                 if s2 == "/*":
                                     comm = True
                                     find_comm = "*/"
                                     len_find_comm = 2
                                     continue
-                            if n >= 4: 
-                                if prev_c[-4:] == ">--":                            
+                            if n >= 3: 
+                                if prev_c[-3:] == ">--":                            
                                     find_comm = "--!<"
                                     len_find_comm = 4
-                                    if char == ">":
-                                        stack -= 1
+                                    # if char == ">":
+                                    #     stack -= 1
                                     continue
 
+                            # if n >= 2:                                
+                            #     # if findNR and c != "\u2029" and c != "\u2028":                                     
+                            #     #     findNR = False
+                            #     #     findSS = False                                    
+                            #     #     cur_line = cur.block().text() # Получаем текущую строку, где находится курсор                                    
+                            #     #     pos_in_line = cur.position() - cur.block().position() # Позиция курсора в строке                                    
+                            #     #     idx = cur_line.find("//") # Проверяем, есть ли // в строке до позиции курсора
+                            #     #     # если найдено будет :// то это не комментарий, а URL
+                            #     #     if (idx < 1 or cur_line[idx-1] != ":") and (idx != -1) and (idx < pos_in_line):
+                            #     #         # После // не должно быть */ и -->
+                            #     #         after = cur_line[idx+2:]
+                            #     #         if "*/" not in after and "-->" not in after:
+                            #     #             findNR = True                                            
+                            #     #             continue  
+                            #     #     if idx != -1:    
+                            #     #         findSS = True                               
+
+                            #     s2 = prev_c[-2:]
+                            #     if s2 == "//":
+                            #         comm = True
+                            #         # find_comm = "\u2029" # PARAGRAPH SEPARATOR  
+                            #         # len_find_comm = 1
+                            #         find_comm = "//"
+                            #         len_find_comm = 2
+                            #         continue
+                      
                         
                     else: # если идет комментарий
                         s2 = prev_c[-len_find_comm:]                        
-                        if s2 == find_comm:                  
-                            comm = False
-                            find_comm = ""
-                            len_find_comm = 0
+                        if s2 == find_comm and (find_comm=="'" or find_comm=='"'): 
+                            if (direction == 1 and prev_c[-len_find_comm-1:] != '\\"' and prev_c[-len_find_comm-1:] != "\\'") or (direction != 1 and next_c != "\\"):                                
+                                comm = False
+                                find_comm = ""
+                                len_find_comm = 0
+                            else:
+                                continue                                    
                         else:
-                            continue
+                            if s2 == find_comm:
+                                comm = False
+                                find_comm = ""
+                                len_find_comm = 0
+                            else:
+                                continue     
+
 
                     if c == char:
                         stack += 1
@@ -2267,7 +2947,7 @@ class HtmlJavaScriptHighlightingAddon:
         global template_name
 
         # Устанавливаем курсор в режим "песочные часы"
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QGuiApplication.setOverrideCursor(WaitCursor)
 
         try:
             # Получаем текущий текст и позицию курсора
@@ -2376,7 +3056,7 @@ class HtmlJavaScriptHighlightingAddon:
             return
 
         # Устанавливаем курсор в режим "песочные часы"
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QGuiApplication.setOverrideCursor(WaitCursor)
 
         try:            
             user_dir = os.path.expanduser("~")
@@ -2486,7 +3166,7 @@ class HtmlJavaScriptHighlightingAddon:
         global template_name
 
         # Устанавливаем курсор в режим "песочные часы"
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QGuiApplication.setOverrideCursor(WaitCursor)
 
         try:
             user_dir = os.path.expanduser("~")
@@ -2681,7 +3361,7 @@ class HtmlJavaScriptHighlightingAddon:
             return
 
         # Устанавливаем курсор в режим "песочные часы"
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QGuiApplication.setOverrideCursor(WaitCursor)
         try:            
             try:
                 # Читаем содержимое выбранного файла
@@ -2727,7 +3407,7 @@ class HtmlJavaScriptHighlightingAddon:
 
         
         # Устанавливаем курсор в режим "песочные часы"
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        QGuiApplication.setOverrideCursor(WaitCursor)
 
 
         try:
@@ -2891,7 +3571,7 @@ class HtmlJavaScriptHighlightingAddon:
             return        
         edit_area = edit_areas[0]
 
-        edit_area.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)        
+        edit_area.setContextMenuPolicy(CustomContextMenu)        
         edit_area.customContextMenuRequested.connect(lambda: self.make_new_context_menu(edit_area))
 
         # Устанавливаем фильтр событий для перехвата F3, F4
@@ -3302,9 +3982,59 @@ class HtmlJavaScriptHighlightingAddon:
         if edit_area:
             edit_area.cursorPositionChanged.connect(lambda: self.save_cursor_position(edit_area))
 
+        self.current_button = "front_button"  # По умолчанию активна front_button
+
         # подсветка пары для выделения
         self.setup_pair_highlight(edit_area)
 
+    
+
+    def save_cursor_positions_to_prefs21(self):
+        """Сохраняет позиции курсора в файл prefs21"""
+        global gl_model_name
+        try:            
+            data = {}            
+            # Сохраняем данные для текущей модели           
+            data[gl_model_name] = {
+                "cursor_positions": self.cursor_positions,
+                "timestamp": time.time()  # добавляем временную метку
+            }            
+            mw.pm.profile[gl_model_name] = data                      
+        except Exception as e:
+            print(f"Oshibka_pri_sokhranenii_pozitsii_kursora {e}")
+
+
+    def load_cursor_positions_from_prefs21(self, model_name=None):
+        """Загружает позиции курсора из файла prefs21 для указанной или текущей модели"""
+        global gl_model_name
+        try:
+            data = mw.pm.profile.get(model_name, [])            
+            # Если имя модели не указано, используем текущую
+            if model_name is None:
+                model_name = gl_model_name
+            
+            if model_name in data:
+                # Преобразуем строковые ключи обратно в целые числа
+                loaded_positions = data[model_name]["cursor_positions"]
+                converted_positions = {}
+                
+                for key, value in loaded_positions.items():
+                    try:
+                        # Пробуем преобразовать ключ в число
+                        int_key = int(key)
+                        converted_positions[int_key] = value
+                    except ValueError:
+                        # Если не получается, оставляем как строку
+                        converted_positions[key] = value
+                
+                self.cursor_positions = converted_positions                
+                return True
+            else:                
+                return False
+                
+        except Exception as e:
+            print(f"Oshibka pri zagruzke pozitsii kursora: {e}")
+            return False
 
     
     def save_cursor_position(self, edit_area):
@@ -3320,33 +4050,62 @@ class HtmlJavaScriptHighlightingAddon:
                 pos_data = self.cursor_positions[thisCardLayout.ord][self.current_button]
             pos_data["cursor_position"] = cursor.selectionStart()
             pos_data["cursor_position_end"] = cursor.selectionEnd()
-            pos_data["vertical_scroll"] = vertical_scroll                 
+            pos_data["vertical_scroll"] = vertical_scroll   
+
+            # Автоматически сохраняем в профиль при каждом изменении
+            self.save_cursor_positions_to_prefs21()              
 
 
     def restore_cursor_position(self, edit_area, button_name):
         """Восстанавливает позицию курсора и вертикального скроллинга для указанной кнопки."""
-        global thisCardLayout
-        cursor = edit_area.textCursor()
-        # для стиля всегда получаем из нулевой
-        if button_name == "style_button":
-            position_data = self.cursor_positions[0].get(button_name, {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0})
-        else:
-            position_data = self.cursor_positions[thisCardLayout.ord].get(button_name, {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0})
-        
-        cursor_position = position_data["cursor_position"]
-        cursor_position_end = position_data["cursor_position_end"] 
-        vertical_scroll = position_data["vertical_scroll"]
-        
-        QTimer.singleShot(50, lambda:cursor.setPosition(cursor_position) )
-        QTimer.singleShot(75, lambda: cursor.setPosition(cursor_position_end, KeepAnchor) )     
+        try:
+            global thisCardLayout
+            cursor = edit_area.textCursor()
 
-        # Применяем изменения к текстовому полю
-        QTimer.singleShot(100, lambda: edit_area.setTextCursor(cursor) )
-        # Восстанавливаем вертикальный скроллинг
-        QTimer.singleShot(125, lambda: edit_area.verticalScrollBar().setValue(vertical_scroll))
-        # Устанавливаем фокус на текстовое поле
-        QTimer.singleShot(150, lambda: edit_area.setFocus())
-        self.historyN = 0
+            # Для стиля всегда используем индекс 0
+            if button_name == "style_button":
+                index = 0
+            else:
+                index = thisCardLayout.ord
+
+            # Проверяем существование ключа
+            if index not in self.cursor_positions:
+                # Если ключа нет, создаем пустые значения
+                self.cursor_positions[index] = {
+                    "front_button": {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0},
+                    "back_button": {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0},
+                    "style_button": {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0}
+                }
+
+            position_data = self.cursor_positions[index].get(button_name, {
+                "cursor_position": 0, 
+                "cursor_position_end": 0, 
+                "vertical_scroll": 0
+            })
+
+            # # для стиля всегда получаем из нулевой
+            # if button_name == "style_button":
+            #     position_data = self.cursor_positions[0].get(button_name, {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0})
+            # else:
+            #     print("button_name=", button_name)
+            #     position_data = self.cursor_positions[thisCardLayout.ord].get(button_name, {"cursor_position": 0, "cursor_position_end": 0, "vertical_scroll": 0})
+            
+            cursor_position = position_data["cursor_position"]
+            cursor_position_end = position_data["cursor_position_end"] 
+            vertical_scroll = position_data["vertical_scroll"]
+            
+            QTimer.singleShot(50, lambda:cursor.setPosition(cursor_position) )
+            QTimer.singleShot(75, lambda: cursor.setPosition(cursor_position_end, KeepAnchor) )     
+
+            # Применяем изменения к текстовому полю
+            QTimer.singleShot(100, lambda: edit_area.setTextCursor(cursor) )
+            # Восстанавливаем вертикальный скроллинг
+            QTimer.singleShot(125, lambda: edit_area.verticalScrollBar().setValue(vertical_scroll))
+            # Устанавливаем фокус на текстовое поле
+            QTimer.singleShot(150, lambda: edit_area.setFocus())
+            self.historyN = 0
+        except Exception as e:
+            print(f"Oshibka_pri_vosstanovlenii_pozitsii_kursora {e}")
 
     
 
@@ -3409,6 +4168,7 @@ class HtmlJavaScriptHighlightingAddon:
 <br><span style="color: {colorTag};">&#60;div&#62;...&#60;/div&#62;</span> - Ctrl+Shift+8 (+*)
 <br><span style="color: {colorTag};">&#60;!-- ... --&#62;</span> - Ctrl+/
 <br><span style="color: {colorTag};">/* ... */</span> - Ctrl+Shift+/
+<br><span style="color: {colorTag};">&amp;nbsp;</span> - Ctrl+Shift+Space
 
 <br>F1 — {Menu_F1}
 <br>Alt+0 — {Menu_F1}
@@ -3679,7 +4439,7 @@ class HtmlJavaScriptHighlightingAddon:
                 if after_cursor.strip() == "":
                     # Удаляем все пробелы/табуляции после курсора до конца строки
                     cursor.setPosition(block.position() + pos_in_block)
-                    cursor.setPosition(block.position() + len(text), QTextCursor.MoveMode.KeepAnchor)
+                    cursor.setPosition(block.position() + len(text), KeepAnchor)
                     cursor.removeSelectedText()                    
                     is_at_end = True # Теперь считаем, что курсор в конце строки
 
@@ -3722,8 +4482,7 @@ class HtmlJavaScriptHighlightingAddon:
 
       
 
-
-    def handle_home_key(self, edit_area):
+    def handle_home_key(self, edit_area, shift_press):
         cursor = edit_area.textCursor()
         block = cursor.block()
         text = block.text()
@@ -3735,55 +4494,69 @@ class HtmlJavaScriptHighlightingAddon:
         leading_ws = m.group(1) if m else ""
         first_non_ws = len(leading_ws)
 
-        # Было ли выделение
-        has_selection = cursor.hasSelection()
+        # Определяем якорь выделения (при зажатом Shift)
+        if cursor.hasSelection() and shift_press:
+            anchor = cursor.anchor()  # Сохраняем начальную позицию выделения
+        else:
+            anchor = cursor.position()  # Нет выделения - якорь на текущей позиции
 
-        # Если есть выделение — переносим курсор к первому непробельному символу
-        if has_selection:
-            cursor.clearSelection()
-            cursor.setPosition(block.position() + first_non_ws)
-            edit_area.setTextCursor(cursor)
-            return True
-
-        # Если курсор уже перед первым непробельным символом (и не в начале)
+        # Целевая позиция курсора
         if pos_in_block == first_non_ws and pos_in_block != 0:
-            cursor.setPosition(block.position())
+            target_pos = block.position()  # Переход в начало строки
+        elif pos_in_block != first_non_ws:
+            target_pos = block.position() + first_non_ws  # Переход к первому непробельному
+        else:
+            target_pos = cursor.position()  # Уже в нужной позиции
+
+        # Если есть модификатор Shift - создаем/расширяем выделение
+        if shift_press:
+            # Создаем выделение от якоря до целевой позиции
+            new_cursor = QTextCursor(cursor)
+            new_cursor.setPosition(anchor)
+            new_cursor.setPosition(target_pos, KeepAnchor)
+            edit_area.setTextCursor(new_cursor)
+        else:
+            # Без Shift - просто перемещаем курсор
+            cursor.setPosition(target_pos)
             edit_area.setTextCursor(cursor)
-            return True
-
-        # Если курсор не на позиции первого непробельного — переносим туда
-        if pos_in_block != first_non_ws:
-            cursor.setPosition(block.position() + first_non_ws)
-            edit_area.setTextCursor(cursor)
-            return True
-
-        # Если уже в начале строки — стандартное поведение
-        return False    
+        
+        return True
+    
 
 
-    def handle_end_key(self, edit_area):
+    def handle_end_key(self, edit_area, shift_press):
         cursor = edit_area.textCursor()
         block = cursor.block()
         text = block.text()
         pos_in_block = cursor.position() - block.position()
-        # Если не в конце строки — переносим в конец строки (стандартное поведение)
-        if pos_in_block != len(text):
-            cursor.setPosition(block.position() + len(text))
-            edit_area.setTextCursor(cursor)
-            return True
+        
+        # Определяем якорь выделения (при зажатом Shift)
+        if cursor.hasSelection() and shift_press:
+            anchor = cursor.anchor()  # Сохраняем начальную позицию выделения
+        else:
+            anchor = cursor.position()  # Нет выделения - якорь на текущей позиции
 
-        # Если уже в конце строки — ищем последний непробельный символ
         stripped_text = text.rstrip()
         last_non_ws = len(stripped_text)
-        # Если строка полностью из пробелов — не двигаем курсор
-        if last_non_ws == 0:
-            return False
-        # Если уже после последнего непробельного — не двигаем курсор
-        if pos_in_block == last_non_ws:
-            return False
-        # Переносим курсор после последнего непробельного символа
-        cursor.setPosition(block.position() + last_non_ws)
-        edit_area.setTextCursor(cursor)
+        
+        # Определяем целевую позицию
+        if pos_in_block != len(text):
+            target_pos = block.position() + len(text)  # Конец строки
+        elif last_non_ws > 0 and pos_in_block != last_non_ws:
+            target_pos = block.position() + last_non_ws  # После последнего непробельного
+        else:
+            target_pos = cursor.position()  # Уже в нужной позиции
+
+        # Если есть модификатор Shift - создаем/расширяем выделение
+        if shift_press:
+            new_cursor = QTextCursor(cursor)
+            new_cursor.setPosition(anchor)
+            new_cursor.setPosition(target_pos, KeepAnchor)
+            edit_area.setTextCursor(new_cursor)
+        else:
+            cursor.setPosition(target_pos)
+            edit_area.setTextCursor(cursor)
+        
         return True
 
 
@@ -3870,9 +4643,9 @@ class HtmlJavaScriptHighlightingAddon:
         scan_code = event.nativeScanCode()
         # print("scan_code", scan_code)
         modifiers = event.modifiers()
-        Ctrl = bool(modifiers & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.MetaModifier))
-        Shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
-        Alt = bool(modifiers & Qt.KeyboardModifier.AltModifier)    
+        Ctrl = bool(modifiers & (ControlModifier | MetaModifier))
+        Shift = bool(modifiers & ShiftModifier)
+        Alt = bool(modifiers & AltModifier)    
         # print("Alt", Alt, "Ctrl", Ctrl, "Shift", Shift)    
         if event.nativeScanCode() == 54:      
             self.RShift = True # если нажат именно правый Shift
@@ -3920,17 +4693,23 @@ class HtmlJavaScriptHighlightingAddon:
 
 
         if not Ctrl and not Alt and Shift:
-            if key == Qt.Key.Key_Return:
+            if key == Key_Return:
                 cursor = edit_area.textCursor()
                 cursor.insertText('<br>')
                 return  
+
+        if Ctrl and not Alt and Shift:
+            if key == Key_Space:
+                cursor = edit_area.textCursor()
+                cursor.insertText('&nbsp;')
+                return  
             
 
-        if Shift and not Ctrl and not Alt and (key ==  Qt.Key.Key_Percent or scan_code == 6):            
+        if Shift and not Ctrl and not Alt and (key ==  Key_Percent or scan_code == 6):            
             self.selTextBeforeShift = cursor.selectedText() # выделенный текст до нажатия Shift+5 или просто %
 
         # поиск %% если он будет
-        if Ctrl and not Alt and key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+        if Ctrl and not Alt and key in (Key_Tab, Key_Backtab):
             if not Shift:
                 self.find_and_select_double_percent( edit_area )
                 return
@@ -3938,7 +4717,7 @@ class HtmlJavaScriptHighlightingAddon:
                 self.find_and_select_double_percent( edit_area, False )
                 return
                 
-        if Ctrl and not Shift and not Alt and key == Qt.Key.Key_Space:
+        if Ctrl and not Shift and not Alt and key == Key_Space:
 
             # пересчитаем список атодополнения по всем словам из текста            
             text = edit_area.toPlainText()
@@ -3962,7 +4741,7 @@ class HtmlJavaScriptHighlightingAddon:
 
         # Проверяем, активен ли список автодополнения
         if self.completer.popup().isVisible():
-            if key in (Qt.Key.Key_Enter, Qt.Key.Key_Return) or (key == Qt.Key.Key_Tab):
+            if key in (Key_Enter, Key_Return) or (key == Key_Tab):
                 # Получаем выбранный элемент, если не выбран — берем верхний
                 idx = self.completer.popup().currentIndex()
                 if not idx.isValid():
@@ -3972,11 +4751,11 @@ class HtmlJavaScriptHighlightingAddon:
                 self.completer.popup().hide()
                 self.insert_autocomplete(edit_area, text)
                 return          
-            elif key == Qt.Key.Key_Escape:
+            elif key == Key_Escape:
                 # Закрываем список автодополнения
                 self.completer.popup().hide()
                 return
-            elif key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+            elif key in (Key_Up, Key_Down):
                 # Передаем управление списку автодополнения
                 self.completer.popup().event(event)
                 return
@@ -3986,32 +4765,32 @@ class HtmlJavaScriptHighlightingAddon:
         
         global paste_without_tab_replace
         # вставка текста (особая, так как стандартная будет заменять Tab на 4 пробела)
-        if key == Qt.Key.Key_V and Ctrl and Shift and not Alt:   
+        if key == Key_V and Ctrl and Shift and not Alt:   
             paste_without_tab_replace = True
             edit_area.paste()
             paste_without_tab_replace = False
             return
         
-        if not Ctrl and not Alt and not Shift and key == Qt.Key.Key_Return:                                  
+        if not Ctrl and not Alt and not Shift and key == Key_Return:                                  
             if self.handle_enter_with_indent(edit_area):
                 original_key_press = 0
                 return            
 
-        if not Ctrl and not Alt and not Shift and key == Qt.Key.Key_Home:
-            self.handle_home_key(edit_area)
+        if not Ctrl and not Alt and key == Key_Home:
+            self.handle_home_key(edit_area, Shift)
             return
         
-        if not Ctrl and not Alt and not Shift and key == Qt.Key.Key_End:
-            self.handle_end_key(edit_area)
+        if not Ctrl and not Alt and key == Key_End:
+            self.handle_end_key(edit_area, Shift)
             return
         
         if not Ctrl and not Alt and not Shift:
-            if key == Qt.Key.Key_F1: 
+            if key == Key_F1: 
                 self.show_help_dialog_hotkey(edit_area)
                 return
             
         if not Ctrl and not Alt:
-            if  key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+            if  key in (Key_Tab, Key_Backtab):
                 cursor = edit_area.textCursor()
                 if not cursor.hasSelection(): # Если нет выделения                         
                     if not Shift: # просто добавляем 4 пробела
@@ -4093,79 +4872,79 @@ class HtmlJavaScriptHighlightingAddon:
                 return   
 
         if not Ctrl and Alt and not Shift:
-            if key == Qt.Key.Key_0 or scan_code == 11: 
+            if key == Key_0 or scan_code == 11: 
                 self.show_help_dialog_hotkey(edit_area)
                 return
                  
 
         if Ctrl:
             if not Shift and not Alt:                
-                if key == Qt.Key.Key_Slash or scan_code == 53:
+                if key == Key_Slash or scan_code == 53:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<!--", "-->", True)
                     return
-                if key == Qt.Key.Key_B:
+                if key == Key_B:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<b>", "</b>", False)                    
                     return
-                if key == Qt.Key.Key_I:
+                if key == Key_I:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<i>", "</i>", False)
                     return
-                if key == Qt.Key.Key_U:
+                if key == Key_U:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<u>", "</u>", False)
                     return     
-                if key == Qt.Key.Key_K:
+                if key == Key_K:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<a href=\"\">", "</a>", False)
                     return    
-                if key == Qt.Key.Key_M:
+                if key == Key_M:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<mark>", "</mark>", False)
                     return
-                if key == Qt.Key.Key_Q:
+                if key == Key_Q:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<blockquote>", "</blockquote>", False)
                     return 
-                if key == Qt.Key.Key_Equal or scan_code == 13:
+                if key == Key_Equal or scan_code == 13:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<sub>", "</sub>", False)
                     return
 
             if Shift and not Alt:
-                if key == Qt.Key.Key_Slash or scan_code == 53:
+                if key == Key_Slash or scan_code == 53:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "/*", "*/", True)
                     return
-                if key == Qt.Key.Key_Plus or scan_code == 13:
+                if key == Key_Plus or scan_code == 13:
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<sup>", "</sup>", False)
                     return
                 
-                if key == Qt.Key.Key_Exclam or scan_code == 2: # 1                    
+                if key == Key_Exclam or scan_code == 2: # 1                    
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h1>", "</h1>", False)
                     return 
-                if key == Qt.Key.Key_At or scan_code == 3: # 2
+                if key == Key_At or scan_code == 3: # 2
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h2>", "</h2>", False)
                     return
-                if key == Qt.Key.Key_NumberSign or scan_code == 4: # 3
+                if key == Key_NumberSign or scan_code == 4: # 3
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h3>", "</h3>", False)
                     return
-                if key == Qt.Key.Key_Dollar or scan_code == 5: # 4
+                if key == Key_Dollar or scan_code == 5: # 4
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h4>", "</h4>", False)
                     return
-                if key == Qt.Key.Key_Percent or scan_code == 6: # 5
+                if key == Key_Percent or scan_code == 6: # 5
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h5>", "</h5>", False)
                     return
-                if key == Qt.Key.Key_AsciiCircum or scan_code == 7: # 6
+                if key == Key_AsciiCircum or scan_code == 7: # 6
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<h6>", "</h6>", False)
                     return      
-                if key == Qt.Key.Key_Ampersand or scan_code == 8: # 7
+                if key == Key_Ampersand or scan_code == 8: # 7
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<p>", "</p>", False)
                     return 
-                if key == Qt.Key.Key_Asterisk or scan_code == 9: # 8
+                if key == Key_Asterisk or scan_code == 9: # 8
                     self.toggle_wrapping_by_tags(edit_area, cursor, "<div>", "</div>", False)
                     return 
 
                 
-                if key == Qt.Key.Key_D:
+                if key == Key_D:
                     self.apply_details_tag(edit_area)
                     return
-                if key == Qt.Key.Key_T:
+                if key == Key_T:
                     self.choose_text_color(edit_area)
                     return
-                if key == Qt.Key.Key_B:
+                if key == Key_B:
                     self.choose_background_color(edit_area)
                     return
 
@@ -4175,38 +4954,38 @@ class HtmlJavaScriptHighlightingAddon:
             original_key_press(event)
             return
         
-        if key == Qt.Key.Key_BraceLeft:
+        if key == Key_BraceLeft:
             original_key_press(event)
             cursor.insertText("}")
             cursor.setPosition(position + 1)
             edit_area.setTextCursor(cursor)
             return
-        elif key == Qt.Key.Key_BracketLeft:
+        elif key == Key_BracketLeft:
             original_key_press(event)
             cursor.insertText("]")
             cursor.setPosition(position + 1)
             edit_area.setTextCursor(cursor)
             return
-        elif key == Qt.Key.Key_ParenLeft:
+        elif key == Key_ParenLeft:
             original_key_press(event)
             cursor.insertText(")")
             cursor.setPosition(position + 1)
             edit_area.setTextCursor(cursor)
             return
-        elif key == Qt.Key.Key_QuoteDbl:
+        elif key == Key_QuoteDbl:
             original_key_press(event)
             cursor.insertText("\"")
             cursor.setPosition(position + 1)
             edit_area.setTextCursor(cursor)
             return
-        elif key == Qt.Key.Key_Apostrophe:
+        elif key == Key_Apostrophe:
             original_key_press(event)
             cursor.insertText("'")
             cursor.setPosition(position + 1)
             edit_area.setTextCursor(cursor)
             return
     
-        if key == Qt.Key.Key_Minus:
+        if key == Key_Minus:
             original_key_press(event)
             cursor.setPosition(position + 1)
             cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor, 4)
@@ -4218,7 +4997,7 @@ class HtmlJavaScriptHighlightingAddon:
                 edit_area.setTextCursor(cursor)
             return
     
-        if key == Qt.Key.Key_Asterisk:
+        if key == Key_Asterisk:
             original_key_press(event)
             cursor.setPosition(position + 1)
             cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor, 2)
@@ -4231,7 +5010,7 @@ class HtmlJavaScriptHighlightingAddon:
             return
        
     
-        if key == Qt.Key.Key_Greater:
+        if key == Key_Greater:
             original_key_press(event)
             cursor.setPosition(position+1)
             cursor.movePosition(QTextCursor.MoveOperation.StartOfLine, KeepAnchor)
@@ -4341,27 +5120,27 @@ class HtmlJavaScriptHighlightingAddon:
         if match:
             # Меняем только цвет в существующем теге
             new_tag = f'<span style="color: {color_name};">{match.group(2)}</span>'
-            cursor.setPosition(match.start(), QTextCursor.MoveMode.MoveAnchor)
-            cursor.setPosition(match.end(), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(match.start(), MoveAnchor)
+            cursor.setPosition(match.end(), KeepAnchor)
             cursor.insertText(new_tag)
             # Восстанавливаем выделение только на исходном тексте
             new_sel_start = match.start() + len(f'<span style="color: {color_name};">')
             cursor.setPosition(new_sel_start)
-            cursor.setPosition(new_sel_start + len(match.group(2)), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(new_sel_start + len(match.group(2)), KeepAnchor)
         elif match_color:
             # Просто заменить код цвета на новый, без тегов
             cursor.removeSelectedText()
             cursor.insertText(color_name)
             # Восстановить выделение на новом коде
             cursor.setPosition(sel_start)
-            cursor.setPosition(sel_start + len(color_name), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(sel_start + len(color_name), KeepAnchor)
         else:
             # Вставляем новый тег, выделяем только текст
             cursor.removeSelectedText()
             cursor.insertText(f'<span style="color: {color_name};">{selected_text}</span>')
             new_sel_start = sel_start + len(f'<span style="color: {color_name};">')
             cursor.setPosition(new_sel_start)
-            cursor.setPosition(new_sel_start + len(selected_text), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(new_sel_start + len(selected_text), KeepAnchor)
         edit_area.setTextCursor(cursor)
         cursor.endEditBlock()
 
@@ -4412,24 +5191,24 @@ class HtmlJavaScriptHighlightingAddon:
         cursor.beginEditBlock()
         if match:
             new_tag = f'<p style="background-color: {color_name};">{match.group(2)}</p>'
-            cursor.setPosition(match.start(), QTextCursor.MoveMode.MoveAnchor)
-            cursor.setPosition(match.end(), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(match.start(), MoveAnchor)
+            cursor.setPosition(match.end(), KeepAnchor)
             cursor.insertText(new_tag)
             new_sel_start = match.start() + len(f'<p style="background-color: {color_name};">')
             cursor.setPosition(new_sel_start)
-            cursor.setPosition(new_sel_start + len(match.group(2)), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(new_sel_start + len(match.group(2)), KeepAnchor)
         elif match_color:
             # Просто заменить код цвета на новый, без тегов
             cursor.removeSelectedText()
             cursor.insertText(color_name)
             cursor.setPosition(sel_start)
-            cursor.setPosition(sel_start + len(color_name), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(sel_start + len(color_name), KeepAnchor)
         else:
             cursor.removeSelectedText()
             cursor.insertText(f'<p style="background-color: {color_name};">{selected_text}</p>')
             new_sel_start = sel_start + len(f'<p style="background-color: {color_name};">')
             cursor.setPosition(new_sel_start)
-            cursor.setPosition(new_sel_start + len(selected_text), QTextCursor.MoveMode.KeepAnchor)
+            cursor.setPosition(new_sel_start + len(selected_text), KeepAnchor)
         edit_area.setTextCursor(cursor)
         cursor.endEditBlock()
 
