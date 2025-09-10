@@ -65,7 +65,7 @@ If you open the template code in a third-party editor by pressing F2, then do no
  
  — the "Home" and "End" buttons began to work correctly with the "Shift" key
  
- — &nbsp; - Ctrl+Shift+Space
+ — &amp;nbsp; - Ctrl+Shift+Space
  
  — multi-line comment \`\` is now supported only with the equal sign =\`\`
  
