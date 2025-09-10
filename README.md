@@ -57,7 +57,7 @@ If you open the template code in a third-party editor by pressing F2, then do no
   
  — fixed the error when pressing F2 if the front side was not opened before.
  
- — error in the comment presentation if the long comment symbol ` was somewhere in "`"
+ — error in the comment presentation if the long comment symbol \` was somewhere in "\`"
  
  — highlighting {{}} even if the field is specified in "" or in ''
  
@@ -67,7 +67,7 @@ If you open the template code in a third-party editor by pressing F2, then do no
  
  — &nbsp; - Ctrl+Shift+Space
  
- — multi-line comment `` is now supported only with the equal sign =``
+ — multi-line comment \`\` is now supported only with the equal sign =\`\`
  
  — fixed the error of searching backwards for brackets }
  
