@@ -2438,8 +2438,9 @@ class HtmlJavaScriptHighlightingAddon:
 
     def highlight_pair(self, edit_area):        
         """подсветка парных скобок, тегов"""
-               
-
+        
+        if (self is None) or (edit_area is None):
+            return
         cursor = edit_area.textCursor()
         text = edit_area.toPlainText()
         sel = cursor.selectedText()
@@ -2890,7 +2891,8 @@ class HtmlJavaScriptHighlightingAddon:
         def custom_close_event(event):
             global focus_watcher            
             focus_watcher.activate_trigger = False
-            self.update_timer.stop()                                                         
+            self.update_timer.stop() 
+            self.sel_par_timer.stop()                                                        
             original_close_event(event) # Вызов оригинального обработчика
         card_layout.closeEvent = custom_close_event
 
@@ -2901,7 +2903,8 @@ class HtmlJavaScriptHighlightingAddon:
         def custom_hide_event(event):
             global focus_watcher            
             focus_watcher.activate_trigger = False
-            self.update_timer.stop()                                               
+            self.update_timer.stop() 
+            self.sel_par_timer.stop()                                               
             original_hide_event(event) # Вызов оригинального обработчика
         card_layout.hideEvent = custom_hide_event
 
