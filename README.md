@@ -52,7 +52,8 @@ If you open the template code in a third-party editor by pressing F2, then do no
 
 
 **VERSIONS**
-
+- 1.1, date: 2025-09-22. I'm trying to fix an error accessing a component from a timer when the window was already closed. If I catch another similar error, I'll update it again from version 1.1.
+  
 - 1.1, date: 2025-09-10. Corrected and improved:
   
  — fixed the error when pressing F2 if the front side was not opened before.
