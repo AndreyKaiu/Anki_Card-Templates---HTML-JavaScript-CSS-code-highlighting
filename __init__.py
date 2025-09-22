@@ -16,7 +16,7 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.1, date: 2025-09-10
+# Version 1.1, date: 2025-09-22
 import os
 import json
 import time
