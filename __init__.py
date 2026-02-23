@@ -16,7 +16,7 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.1, date: 2025-09-22
+# Version 1.2, date: 2026-02-22
 import os
 import json
 import time
@@ -66,7 +66,7 @@ try:
         QStyledItemDelegate        
     )    
     from PyQt6.QtGui import QTextDocument, QTextOption, QGuiApplication, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QTextCursor, QPainter, QTextFormat
-    from PyQt6.QtCore import QRegularExpression, Qt, QSize, QEvent, QTimer   
+    from PyQt6.QtCore import QRegularExpression, Qt, QSize, QEvent, QTimer, QCoreApplication   
     pyqt_version = "PyQt6"
 except ImportError:
     from PyQt5.QtWidgets import (
@@ -86,7 +86,7 @@ except ImportError:
         QStyledItemDelegate        
     )
     from PyQt5.QtGui import QTextDocument, QTextOption, QGuiApplication, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QTextCursor, QPainter, QTextFormat
-    from PyQt5.QtCore import QRegExp, Qt, QSize, QEvent, QTimer
+    from PyQt5.QtCore import QRegExp, Qt, QSize, QEvent, QTimer, QCoreApplication
     pyqt_version = "PyQt5"
 
 if pyqt_version == "PyQt6":    
@@ -150,8 +150,11 @@ if pyqt_version == "PyQt6":
     Key_Apostrophe = Qt.Key.Key_Apostrophe
     Key_Minus = Qt.Key.Key_Minus
     Key_Greater = Qt.Key.Key_Greater
-
-
+    Key_Left = Qt.Key.Key_Left
+    Key_Right = Qt.Key.Key_Right
+    Key_Left = Qt.Key.Key_Left
+    Key_Insert = Qt.Key.Key_Insert
+    
 else:
     KeepAnchor = QTextCursor.KeepAnchor
     MoveAnchor = QTextCursor.MoveAnchor
@@ -213,6 +216,9 @@ else:
     Key_Apostrophe = Qt.Key_Apostrophe
     Key_Minus = Qt.Key_Minus
     Key_Greater = Qt.Key_Greater
+    Key_Right = Qt.Key_Right
+    Key_Left = Qt.Key_Left
+    Key_Insert = Qt.Key_Insert
 
 # ========================= LOGGING ===========================================
 log: Logger = logging.getLogger(__name__)
@@ -341,7 +347,7 @@ def custom_update_current_ordinal_and_redraw(self, idx: int) -> None:
 
 
 paste_without_tab_replace = False
-def on_card_layout_will_show(card_layout: CardLayout):   
+def on_card_layout_will_show(card_layout: CardLayout):    
     global thisCardLayout, gl_model_name, template_name, theme_night, colors, html_js_highlighting_addon, original_update_current_ordinal_and_redraw   
     if theme_manager.night_mode: # определям темная или светлая тема
         theme_night = True
@@ -1922,9 +1928,16 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             fmt.setBackground(qcolor)
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(GC_white)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(GC_black)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_black)
+
             self.setFormat(match.capturedStart(0), match.capturedLength(0), fmt)
 
         # Подсветка слов заданные словом цвета               
@@ -1940,11 +1953,19 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                 continue
             fmt = QTextCharFormat()
             fmt.setBackground(qcolor)
+            
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(GC_white)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(GC_black)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_black)    
+
             self.setFormat(match.capturedStart(1), match.capturedLength(1), fmt)    
 
         # Подсветка слов с rgb shl
@@ -1959,11 +1980,19 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                 continue
             fmt = QTextCharFormat()
             fmt.setBackground(qcolor)
+            
             # Автоматически выбираем белый/чёрный текст по яркости
             if qcolor.lightness() < 128:
-                fmt.setForeground(GC_white)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_white)
             else:
-                fmt.setForeground(GC_black)
+                if qcolor.alpha() < 64:
+                    fmt.setForeground(QColor("gray"))
+                else:
+                    fmt.setForeground(GC_black)                    
+            
             #self.setFormat(match.capturedStart(0), match.capturedLength(0), fmt)
             self.setFormat(match.capturedStart(0), 4, fmt)
 
@@ -2215,6 +2244,101 @@ class HtmlJavaScriptHighlightingAddon:
             "transition-property", "transition-timing-function", "translate", "unicode-bidi", "user-select", "vertical-align",
             "visibility", "white-space", "widows", "width", "will-change", "word-break", "word-spacing", "word-wrap",
             "writing-mode", "z-index", "zoom",
+            "media", "media (max-width)", "media (min-width)", "media (orientation)", 
+            "media (prefers-color-scheme)", "media (prefers-contrast)", "media (hover)",
+            "media (pointer)", "media (any-hover)", "media (any-pointer)",
+            "property", "initial-value", "inherits", "syntax",
+            "page", "size", "marks", "bleed", "page-orientation", "page", 
+            "orphans", "widows", "box-decoration-break",
+            "container", "container-type", "container-name", "container",
+            "media (container)", "contain",
+            "clip-rule", "mask-source-type",
+            "font-display", "font-face", "font-smooth",
+            "text-wrap", "hyphenate-character", "hyphenate-limit-chars", 
+            "line-clamp", "max-lines", "continue", "text-spacing",
+            "font-palette", "base-palette", "override-colors", "font-palette-values",
+            "text-emphasis", "text-emphasis-color", "text-emphasis-position", "text-emphasis-style",
+            "counter-set", "marker", "counter-style", "symbols()", "system", "negative", "prefix", "suffix", "range",
+            "pad", "fallback", "speak-as", "additive-symbols",
+            "subgrid", "masonry",
+            "keyframes", "animation-timeline", "animation-range",
+            "animation-range-start", "animation-range-end", "animation-composition",
+            "transition-behavior", "view-timeline", "view-timeline-name",
+            "view-timeline-axis", "scroll-timeline", "scroll-timeline-name",
+            "scroll-timeline-axis", "margin-trim", "padding-trim",
+            "accent-color", "color-scheme", "field-sizing", "interpolate-size",
+            "lighting-color", "flood-color", "flood-opacity",
+            "nightMode","card", "important",            
+            "left", "right", "center", "justify", "start", "end", "match-parent", "justify-all",
+            "transparent", "currentColor",
+            
+            # шрифты
+            "Arial", "Verdana", "Helvetica", "Helvetica Neue", "Times New Roman", "Georgia", "Courier New",
+            "Courier", "Comic Sans MS", "Impact", "Lucida Console", "Lucida Sans Unicode", "Tahoma", 
+            "Trebuchet MS", "Arial Black", "Palatino", "Palatino Linotype", "Garamond", "Book Antiqua", 
+            "Century Gothic", "Franklin Gothic Medium", "Segoe UI", "Roboto", "Open Sans", "Lato", "Montserrat", 
+            "Poppins", "Inter", "Source Sans Pro", "Raleway", "Oswald", "Ubuntu", "Merriweather", 
+            "Playfair Display", "PT Sans", "PT Serif", "Noto Sans", "Noto Serif", "Fira Sans", "Fira Code", 
+            "Inconsolata", "Droid Sans", "Droid Serif", "Droid Sans Mono", "Cabin", "Nunito", "Nunito Sans", 
+            "Quicksand", "Work Sans", "Manrope", "DM Sans", "DM Serif", "Libre Baskerville", "Libre Franklin", 
+            "Cormorant Garamond", "Crimson Text", "Crimson Pro", "Lora", "Muli", "M PLUS Rounded 1c", "Karla", 
+            "Rubik", "Josefin Sans", "Josefin Slab", "Abril Fatface", "Arvo", "Bitter", "Pacifico", "Satisfy", 
+            "Dancing Script", "Great Vibes", "Shadows Into Light", "Indie Flower", "Gloria Hallelujah", 
+            "Permanent Marker", "Rock Salt", "Special Elite", "Amatic SC", "Comfortaa", "Exo", "Exo 2", 
+            "Rajdhani", "Titillium Web", "Asap", "Asap Condensed", "Barlow", "Barlow Condensed", 
+            "Barlow Semi Condensed", "Fjalla One", "Anton", "Oxygen", "Quattrocento", "Quattrocento Sans", 
+            "Cutive", "Cutive Mono", "Space Mono", "Space Grotesk", "JetBrains Mono", "Source Code Pro", 
+            "Monaco", "Consolas", "Andale Mono", "Menlo", "DejaVu Sans Mono",
+            "serif", "sans-serif", "monospace",
+
+            # цвета
+            "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", 
+            "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", 
+            "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", 
+            "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", 
+            "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", 
+            "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", 
+            "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", 
+            "gold", "goldenrod", "gray", "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred", 
+            "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", 
+            "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", 
+            "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", 
+            "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", 
+            "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue",
+            "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose",
+            "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", 
+            "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", 
+            "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rosybrown", 
+            "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", 
+            "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", 
+            "teal", "thistle", "tomato", "transparent", "turquoise", "violet", "wheat", "white", "whitesmoke", 
+            "yellow", "yellowgreen", "currentcolor",
+
+            # разное
+            "none", "stroke", "win", "mac", "linux", "mobile", "iphone", "ipad", "android", "auto",
+            "ease", "normal", 
+            "normal", "start", "center", "end", "flex-start", "flex-end", "baseline", "first baseline", 
+            "last baseline", "space-between", "space-around", "space-evenly", "stretch", "safe center", 
+            "unsafe center", "auto", "default", "none", "context-menu", "help", "pointer", "progress", 
+            "wait", "cell", "crosshair", "text", "vertical-text", "alias", "copy", "move", "no-drop", 
+            "not-allowed", "grab", "grabbing", "e-resize", "n-resize", "ne-resize", "nw-resize", 
+            "s-resize", "se-resize", "sw-resize", "w-resize", "ew-resize", "ns-resize", "nesw-resize", 
+            "nwse-resize", "col-resize", "row-resize", "all-scroll", "zoom-in", "zoom-out", "block", 
+            "inline", "run-in", "flow", "flow-root", "table", "flex", "grid", "ruby", "block flow", 
+            "inline table", "flex run-in", "list-item", "list-item block", "list-item inline", 
+            "list-item flow", "list-item flow-root", "list-item block flow", "list-item block flow-root", 
+            "flow list-item block", "table-row-group", "table-header-group", "table-footer-group", 
+            "table-row", "table-cell", "table-column-group", "table-column", "table-caption", 
+            "ruby-base", "ruby-text", "ruby-base-container", "ruby-text-container", "contents", 
+            "none", "inline-block", "inline-flex", "inline-grid", "inline-table", "inline-flow-root", 
+            "inline-table", "inline-flex", "inline-grid", "row", "row-reverse", "column", 
+            "column-reverse", "left", "right", "both", "inherit", "static", "relative", "absolute", 
+            "fixed", "sticky", "left", "right", "center", "justify", "start", "end", "match-parent", 
+            "justify-all", "underline", "overline", "line-through", "blink", "solid", "double", 
+            "dotted", "dashed", "wavy", "thin", "medium", "thick", "from-font", "inherit", "initial", 
+            "revert", "revert-layer", "unset",
+        
+
 
             # JavaScript
             "abstract", "arguments", "await", "boolean", "break", "byte", "case", "catch", 
@@ -2283,7 +2407,229 @@ class HtmlJavaScriptHighlightingAddon:
             "toggleAttribute", "toJSON", "toLocaleDateString", "toLocaleLowerCase", "toLocaleTimeString",
             "toLocaleUpperCase", "toLowerCase", "toTimeString", "toUpperCase", "toUTCString",
             "trim", "trimEnd", "trimLeft", "trimRight", "trimStart",
-            "valueAsDate", "valueAsNumber"
+            "valueAsDate", "valueAsNumber",
+
+            # Операторы
+            "instanceof", "typeof", "void", "delete", "new", "super",
+
+            # Глобальные объекты и свойства
+            "globalThis", "global", "window", "self", "document", "navigator", "location", "history", "screen",
+            "localStorage", "sessionStorage", "console", "fetch", "Headers", "Request", "Response", "FormData",
+            "Blob", "File", "FileReader", "URL", "URLSearchParams", "Performance", "Crypto", "SubtleCrypto",
+            "Worker", "SharedWorker", "EventSource", "WebSocket", "MutationObserver", "ResizeObserver",
+            "IntersectionObserver", "Notification", "ServiceWorker", "Cache", "caches", "indexedDB", "IDBFactory",
+            "Infinity", "NaN", "undefined",
+
+            # Методы console
+            "log", "info", "warn", "error", "debug", "trace", "dir", "table", "time", "timeEnd", "timeLog",
+            "group", "groupCollapsed", "groupEnd", "clear", "count", "countReset", "assert", "profile", "profileEnd",
+
+            # События (on-свойства)
+            "onclick", "ondblclick", "onmousedown", "onmouseup", "onmousemove", "onmouseover", "onmouseout",
+            "onmouseenter", "onmouseleave", "onwheel", "onscroll", "onresize", "onfocus", "onblur",
+            "onchange", "oninput", "onselect", "onsubmit", "onreset", "onkeydown", "onkeypress", "onkeyup",
+            "onload", "onunload", "onbeforeunload", "onerror", "onabort", "oncontextmenu",
+            "ontouchstart", "ontouchmove", "ontouchend", "ontouchcancel",
+            "ondrag", "ondragstart", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondrop",
+            "onplay", "onpause", "onended", "onvolumechange", "onwaiting", "oncanplay", "oncanplaythrough",
+            "onanimationstart", "onanimationend", "onanimationiteration", "ontransitionend",
+            "ononline", "onoffline", "onpopstate", "onhashchange", "onstorage", "onmessage",
+
+            # Типы событий (для addEventListener)
+            "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout", "mouseenter",
+            "mouseleave", "wheel", "scroll", "resize", "focus", "blur", "change", "input", "select",
+            "submit", "reset", "keydown", "keypress", "keyup", "load", "unload", "beforeunload", "error",
+            "abort", "contextmenu", "touchstart", "touchmove", "touchend", "touchcancel", "drag", "dragstart",
+            "dragend", "dragenter", "dragleave", "dragover", "drop", "play", "pause", "ended", "volumechange",
+            "waiting", "canplay", "canplaythrough", "animationstart", "animationend", "animationiteration",
+            "transitionend", "online", "offline", "popstate", "hashchange", "storage", "message", "DOMContentLoaded",
+
+            # HTML атрибуты
+            "id", "class", "className", "style", "title", "lang", "dir", "hidden", "tabindex", "accesskey",
+            "draggable", "spellcheck", "contenteditable", "translate", "data-*", "role", "aria-*",
+
+            # CSS-wide значения
+            "inherit", "initial", "unset", "revert", "revert-layer",
+
+            # Коллекции
+            "item", "namedItem", "length", "entries", "keys", "values", "forEach",
+
+            # Новые методы ES2023+
+            "at", "with", "toReversed", "toSorted", "toSpliced", "group", "groupToMap",
+
+            # Объектные методы
+            "hasOwn", "is", "assign", "create", "defineProperty", "defineProperties",
+            "getOwnPropertyDescriptor", "getOwnPropertyDescriptors", "getOwnPropertyNames",
+            "getOwnPropertySymbols", "getPrototypeOf", "setPrototypeOf", "isExtensible",
+            "isFrozen", "isSealed", "preventExtensions", "seal", "freeze", "fromEntries",
+
+            # Promise
+            "resolve", "reject", "all", "allSettled", "any", "race", "withResolvers", "then", "catch", "finally",
+
+            # Таймеры
+            "setTimeout", "clearTimeout", "setInterval", "clearInterval", "setImmediate", "clearImmediate",
+            "requestAnimationFrame", "cancelAnimationFrame", "requestIdleCallback", "cancelIdleCallback",
+
+            "remove", "removeItem", "removeChild", "removeAttribute", "removeEventListener",
+            "removeAttributeNode", "replaceChildren", "replaceChild", "replaceWith",
+            "delete", "clear", "pop", "shift", "splice", "filter",
+
+            # Основные методы управления воспроизведением
+            "play", "pause", "load", "canPlayType", "addTextTrack", "fastSeek",
+
+            # Свойства (для чтения/записи)
+            "currentTime", "duration", "paused", "muted", "volume", "playbackRate",
+            "defaultPlaybackRate", "autoplay", "loop", "controls", "preload", "src",
+            "currentSrc", "networkState", "readyState", "seeking", "seekable",
+            "played", "buffered", "error", "ended", "crossOrigin",
+
+            # События медиа-элементов
+            "onplay", "onpause", "onended", "onvolumechange", "onratechange",
+            "onseeking", "onseeked", "ontimeupdate", "onloadedmetadata",
+            "onloadeddata", "oncanplay", "oncanplaythrough", "onwaiting",
+            "onstalled", "onsuspend", "onabort", "onerror", "onemptied",
+
+            "limit", "items", 
+
+            # Медиа-методы
+            "play", "pause", "load", "canPlayType", "addTextTrack", "fastSeek",
+            "currentTime", "duration", "paused", "muted", "volume", "playbackRate",
+            "defaultPlaybackRate", "autoplay", "loop", "controls", "preload", "src",
+            "currentSrc", "networkState", "readyState", "seeking", "seekable",
+            "played", "buffered", "error", "ended", "crossOrigin",
+            "onplay", "onpause", "onended", "onvolumechange", "onratechange",
+            "onseeking", "onseeked", "ontimeupdate", "onloadedmetadata",
+            "onloadeddata", "oncanplay", "oncanplaythrough", "onwaiting",
+            "onstalled", "onsuspend", "onabort", "onerror", "onemptied",
+
+            # Методы DOM
+            "append", "prepend", "after", "before", "replaceWith", "replaceChildren",
+            "insertAdjacentElement", "insertAdjacentHTML", "insertAdjacentText",
+            "matches", "closest", "contains", "compareDocumentPosition",
+            "getBoundingClientRect", "getClientRects", "scrollIntoView",
+            "scrollIntoViewIfNeeded", "scrollBy", "scrollTo", "scroll",
+            "toggleAttribute", "hasAttribute", "hasAttributes", "hasChildNodes",
+            "isEqualNode", "isSameNode", "isConnected", "getAttributeNames",
+            "dataset", "data-*",
+
+            # Методы форм
+            "focus", "blur", "select", "setSelectionRange", "setRangeText",
+            "checkValidity", "reportValidity", "setCustomValidity",
+            "stepDown", "stepUp", "reset", "submit",
+
+            # Методы событий
+            "dispatchEvent", "preventDefault", "stopPropagation", "stopImmediatePropagation",
+            "composedPath", "target", "currentTarget", "eventPhase", "bubbles", "cancelable",
+
+            # Методы CSSOM
+            "getComputedStyle", "getPropertyValue", "setProperty", "removeProperty",
+            "item", "getPropertyPriority", "cssText", "length",
+
+            # Таймеры
+            "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+            "setImmediate", "clearImmediate", "requestAnimationFrame",
+            "cancelAnimationFrame", "requestIdleCallback", "cancelIdleCallback",
+
+            # Уже есть частично, но добавить полный список
+            "window", "document", "console", "navigator", "location", "history",
+            "screen", "localStorage", "sessionStorage", "indexedDB", "caches",
+            "fetch", "Headers", "Request", "Response", "FormData", "Blob", "File",
+            "FileReader", "URL", "URLSearchParams", "Performance", "Crypto",
+            "crypto", "performance", "atob", "btoa", "structuredClone",
+
+            # Важные глобальные значения
+            "globalThis", "self", "global", "Infinity", "NaN", "undefined",
+
+            # Объекты для работы с данными
+            "JSON", "Math", "Date", "RegExp", "Error", "AggregateError",
+            "EvalError", "RangeError", "ReferenceError", "SyntaxError",
+            "TypeError", "URIError",
+
+            # Структуры данных
+            "Array", "Object", "String", "Number", "Boolean", "Function",
+            "Symbol", "BigInt", "Map", "Set", "WeakMap", "WeakSet",
+            "Promise", "Proxy", "Reflect", "Generator", "GeneratorFunction",
+            "AsyncFunction", "AsyncGenerator", "AsyncGeneratorFunction",
+            "ArrayBuffer", "SharedArrayBuffer", "DataView", "Atomics",
+
+            # Типизированные массивы
+            "Int8Array", "Uint8Array", "Uint8ClampedArray", "Int16Array",
+            "Uint16Array", "Int32Array", "Uint32Array", "Float32Array",
+            "Float64Array", "BigInt64Array", "BigUint64Array",
+
+            # Часто используется в Anki для разных языков
+            "Intl", "Intl.DateTimeFormat", "Intl.NumberFormat", "Intl.Collator",
+            "Intl.ListFormat", "Intl.PluralRules", "Intl.RelativeTimeFormat",
+            "Intl.DisplayNames", "Intl.Locale", "Intl.Segmenter",
+
+            # Базовые интерфейсы
+            "HTMLElement", "HTMLDivElement", "HTMLSpanElement", "HTMLButtonElement",
+            "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement",
+            "HTMLOptionElement", "HTMLFormElement", "HTMLImageElement",
+            "HTMLAnchorElement", "HTMLParagraphElement", "HTMLHeadingElement",
+            "HTMLUListElement", "HTMLOListElement", "HTMLLIElement",
+            "HTMLTableElement", "HTMLTableCellElement", "HTMLTableRowElement",
+
+            # События
+            "Event", "CustomEvent", "MouseEvent", "KeyboardEvent", "TouchEvent",
+            "FocusEvent", "InputEvent", "ClipboardEvent", "DragEvent",
+            "WheelEvent", "AnimationEvent", "TransitionEvent",
+
+            # Коллекции и списки
+            "NodeList", "HTMLCollection", "DOMTokenList", "DOMStringList",
+            "StyleSheetList", "MediaList",
+
+
+            # Canvas
+            "canvas", "CanvasRenderingContext2D", "WebGLRenderingContext",
+            "ImageData", "Path2D", "TextMetrics",
+
+            # Audio
+            "Audio", "AudioContext", "OscillatorNode", "GainNode", "MediaStream",
+            "MediaRecorder", "AudioBuffer", "AudioBufferSourceNode",
+
+            # Геолокация
+            "geolocation", "Geolocation", "Position", "Coordinates",
+
+            # Хранилище
+            "Storage", "StorageEvent",
+
+            # Web Workers
+            "Worker", "SharedWorker", "ServiceWorker", "WorkerGlobalScope",
+
+            # Сетевые запросы
+            "XMLHttpRequest", "XDomainRequest", "ActiveXObject", # старьё, но ещё используется
+
+            # Потоки
+            "ReadableStream", "WritableStream", "TransformStream",
+            "CompressionStream", "DecompressionStream",
+
+            # Наблюдатели
+            "MutationObserver", "ResizeObserver", "IntersectionObserver",
+            "PerformanceObserver", "ReportingObserver",
+
+            # Часто используются, но могут быть не в списке
+            "Object.keys", "Object.values", "Object.entries", "Object.assign",
+            "Object.create", "Object.defineProperty", "Object.defineProperties",
+            "Object.freeze", "Object.seal", "Object.preventExtensions",
+            "Object.isFrozen", "Object.isSealed", "Object.isExtensible",
+            "Object.getPrototypeOf", "Object.setPrototypeOf", "Object.getOwnPropertyDescriptor",
+            "Object.getOwnPropertyDescriptors", "Object.getOwnPropertyNames",
+            "Object.getOwnPropertySymbols", "Object.is", "Object.hasOwn",
+            "Object.groupBy", "Object.fromEntries",
+
+            "Array.from", "Array.of", "Array.isArray", "Array.at", "Array.with",
+            "Array.toReversed", "Array.toSorted", "Array.toSpliced",
+            "Array.groupBy", "Array.groupByToMap",
+
+            # Если вы делаете аддон для Anki, эти объекты могут быть полезны
+            "anki", "mw", "reviewer", "collection", "db", "cards", "notes",
+            "models", "decks", "config", "addonManager", "hook", "guiHooks",
+
+            "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+            "fetch", "Promise", "async", "await", "try", "catch", "finally",
+            "JSON", "JSON.parse", "JSON.stringify", "Math.random", "Math.floor",
+            "Math.round", "Math.max", "Math.min", "Date.now", "console.log"
         ]
         # убираем дубли если будет и отсортируем
         self.html_tags = sorted(list(set(self.html_tags)))
@@ -2944,6 +3290,7 @@ class HtmlJavaScriptHighlightingAddon:
         # Удаляем лишние пробелы в начале и конце
         return sanitized_name.strip()
     
+       
 
     def open_in_external_editor(self, edit_area: QTextEdit):
         """Сохраняет текст и позицию курсора, открывает внешний редактор."""
@@ -2953,9 +3300,16 @@ class HtmlJavaScriptHighlightingAddon:
         QGuiApplication.setOverrideCursor(WaitCursor)
 
         try:
+            self.update_timer.stop() 
             # Получаем текущий текст и позицию курсора
             cursor = edit_area.textCursor()
             current_position = cursor.position()
+            selection_start = cursor.selectionStart()
+            selection_end = cursor.selectionEnd()           
+            # сбросим выделение, а то будет полных крах программы после edit_area.setPlainText  
+            cursor.setPosition(current_position, MoveAnchor)
+            edit_area.setTextCursor(cursor)
+            
             text = edit_area.toPlainText()
 
             user_dir = os.path.expanduser("~")
@@ -3007,10 +3361,16 @@ class HtmlJavaScriptHighlightingAddon:
             # Обновляем содержимое edit_area
             edit_area.setPlainText(text)
 
-            # Восстанавливаем позицию курсора с учетом добавленной строки
             current_position += len(str1) + 1 # +1 для символа новой строки
             cursor.setPosition(current_position)
+            
+            if selection_start != selection_end:
+                if current_position < selection_end: 
+                    cursor.movePosition(NextCharacter, KeepAnchor, (selection_end-selection_start))                 
+                else:            
+                    cursor.movePosition(PreviousCharacter, KeepAnchor, (selection_end-selection_start))                
             edit_area.setTextCursor(cursor)
+            
 
             # Формируем уникальное имя файла
             if suffix != "_style.css":
@@ -3034,11 +3394,12 @@ class HtmlJavaScriptHighlightingAddon:
             formatted = command_str.format(file=temp_file_path, line=line, column=column) # подставляем значения
             command = shlex.split(formatted) # разбиваем на список аргументов (shlex учитывает кавычки, экранирование и т.д.)
 
-            try:
-                self.update_timer.stop()   
-                self.update_timer.start() # таймер проверки обновления перезапустить             
+            try:           
                 # Запускаем внешний редактор
                 subprocess.Popen(command)
+
+                
+
                 tooltip(localizationF("Menu_Open1", "Please wait. Opening external code editor."))                
             except FileNotFoundError:
                 tooltip(localizationF("Menu_Open2","Could not find external code editor. Make sure it is installed and available in PATH."))
@@ -3046,8 +3407,7 @@ class HtmlJavaScriptHighlightingAddon:
         finally:
             # Возвращаем курсор в нормальное состояние
             QGuiApplication.restoreOverrideCursor()
-
-
+            self.update_timer.start() # таймер проверки обновления перезапустить  
 
 
     def needs_update_from_external_editor(self, edit_area: QTextEdit):
@@ -3255,6 +3615,10 @@ class HtmlJavaScriptHighlightingAddon:
                 cursor = edit_area.textCursor()
                 saved_position = cursor.position()  # Сохраняем текущую позицию курсора
 
+                # сбросим выделение, а то будет полных крах программы после edit_area.setPlainText  
+                cursor.setPosition(saved_position, MoveAnchor)
+                edit_area.setTextCursor(cursor)
+
                 # Сохраняем текст вокруг позиции курсора
                 text_before_cursor = edit_area.toPlainText()[:saved_position][-80:]  # 80 символов до курсора
                 text_after_cursor = edit_area.toPlainText()[saved_position:saved_position + 80]  # 80 символов после курсора
@@ -3282,6 +3646,7 @@ class HtmlJavaScriptHighlightingAddon:
                     temp_file.writelines(lines)
 
                 new_content = first_line + file_content
+                
                 # Обновляем содержимое редактора
                 edit_area.setPlainText(new_content)
 
@@ -3371,6 +3736,11 @@ class HtmlJavaScriptHighlightingAddon:
                 with open(file_path, "r", encoding="utf-8") as file:
                     file_content = file.read()
 
+                # сбросим выделение, а то будет полных крах программы после edit_area.setPlainText  
+                cursor = edit_area.textCursor()
+                cursor.setPosition(0, MoveAnchor)                
+                edit_area.setTextCursor(cursor)
+
                 # Заменяем содержимое редактора
                 edit_area.setPlainText(file_content)
 
@@ -3418,6 +3788,12 @@ class HtmlJavaScriptHighlightingAddon:
             cursor = edit_area.textCursor()
             current_position = cursor.position()
             text = edit_area.toPlainText()
+
+            selection_start = cursor.selectionStart()
+            selection_end = cursor.selectionEnd()           
+            # сбросим выделение, а то будет полных крах программы после edit_area.setPlainText  
+            cursor.setPosition(current_position, MoveAnchor)
+            edit_area.setTextCursor(cursor)
 
             # Проверяем, есть ли первая строка с "File modified by anki:"
             newline_index = text.find("\n")
@@ -3483,7 +3859,14 @@ class HtmlJavaScriptHighlightingAddon:
                 # Восстанавливаем позицию курсора с учетом добавленной строки
                 current_position += len(str1) + 1 # +1 для символа новой строки
                 cursor.setPosition(current_position)
+                
+                if selection_start != selection_end:
+                    if current_position < selection_end: 
+                        cursor.movePosition(NextCharacter, KeepAnchor, (selection_end-selection_start))                 
+                    else:            
+                        cursor.movePosition(PreviousCharacter, KeepAnchor, (selection_end-selection_start))                
                 edit_area.setTextCursor(cursor)
+                
 
                 # Сохраняем файл резервной копии
                 with open(backup_file_path, "w", encoding="utf-8") as backup_file:
@@ -3994,13 +4377,15 @@ class HtmlJavaScriptHighlightingAddon:
 
     def save_cursor_positions_to_prefs21(self):
         """Сохраняет позиции курсора в файл prefs21"""
-        global gl_model_name
+        global gl_model_name, thisCardLayout
         try:            
             data = {}            
             # Сохраняем данные для текущей модели           
             data[gl_model_name] = {
                 "cursor_positions": self.cursor_positions,
-                "timestamp": time.time()  # добавляем временную метку
+                "timestamp": time.time(),  # добавляем временную метку
+                "thisCardLayout_ord": thisCardLayout.ord, # какая активна
+                "current_button": self.current_button # какая кнопка активна
             }            
             mw.pm.profile[gl_model_name] = data                      
         except Exception as e:
@@ -4009,34 +4394,80 @@ class HtmlJavaScriptHighlightingAddon:
 
     def load_cursor_positions_from_prefs21(self, model_name=None):
         """Загружает позиции курсора из файла prefs21 для указанной или текущей модели"""
-        global gl_model_name
+        global gl_model_name, thisCardLayout
         try:
-            data = mw.pm.profile.get(model_name, [])            
+            data = mw.pm.profile.get(model_name, {})  # Пустой словарь по умолчанию, а не список
+            
             # Если имя модели не указано, используем текущую
             if model_name is None:
                 model_name = gl_model_name
             
             if model_name in data:
-                # Преобразуем строковые ключи обратно в целые числа
-                loaded_positions = data[model_name]["cursor_positions"]
-                converted_positions = {}
+                model_data = data[model_name]
                 
+                # 1. Загружаем позиции курсора (как было)
+                loaded_positions = model_data.get("cursor_positions", {})
+                converted_positions = {}
                 for key, value in loaded_positions.items():
                     try:
-                        # Пробуем преобразовать ключ в число
                         int_key = int(key)
                         converted_positions[int_key] = value
                     except ValueError:
-                        # Если не получается, оставляем как строку
                         converted_positions[key] = value
+                self.cursor_positions = converted_positions
                 
-                self.cursor_positions = converted_positions                
+                # 2. Восстанавливаем ord карточки, используя существующую механику Anki
+                if "thisCardLayout_ord" in model_data and thisCardLayout is not None:
+                    saved_ord = model_data["thisCardLayout_ord"]                    
+                    # Проверяем, что сохранённый ord соответствует текущей карточке
+                    if saved_ord != thisCardLayout.ord:
+                        # Проверяем, что ord в допустимых пределах
+                        if 0 <= saved_ord < len(thisCardLayout.templates):                            
+                            QTimer.singleShot(250, lambda: self.switch_to_ord_using_anki(saved_ord))
+                                
+                def switch_to_radio_buttons_using_anki():
+                    if "current_button" in model_data:                        
+                        saved_button = model_data["current_button"]
+                        
+                        # ПЕРЕКЛЮЧАЕМ радиокнопку по имени
+                        if hasattr(self, 'radio_buttons') and saved_button in self.radio_buttons:
+                            radio_button = self.radio_buttons[saved_button]
+                            
+                            # Устанавливаем состояние checked
+                            if not radio_button.isChecked():                                
+                                if saved_button == "front_button": 
+                                    thisCardLayout.tform.front_button.click()
+                                elif saved_button == "back_button": 
+                                    thisCardLayout.tform.back_button.click()
+                                elif saved_button == "style_button": 
+                                    thisCardLayout.tform.style_button.click()
+                
+                QTimer.singleShot(500, lambda: switch_to_radio_buttons_using_anki())
+
+                
                 return True
-            else:                
+            else:
                 return False
                 
         except Exception as e:
             print(f"Oshibka pri zagruzke pozitsii kursora: {e}")
+            return False
+
+
+
+    def switch_to_ord_using_anki(self, target_ord):
+        """Переключается на указанный ord"""
+        global thisCardLayout
+        
+        try:               
+            print("switch_to_ord_using_anki = ", target_ord)
+            thisCardLayout.topAreaForm.templatesBox.setFocus()
+            thisCardLayout.update_current_ordinal_and_redraw(target_ord)
+
+            return True
+            
+        except Exception as e:
+            print(f"Oshibka pri pereklyuchenii ord: {e}")
             return False
 
     
@@ -4655,7 +5086,7 @@ class HtmlJavaScriptHighlightingAddon:
         if event.nativeScanCode() == 42 or not Shift:
             self.RShift = False # если нажат именно правый Shift
 
-        if scan_code == 331 and Alt and not Ctrl and not Shift: # scan_code == 331 KEY_LEFT
+        if key == Key_Left and Alt and not Ctrl and not Shift:
             if self.historyN < 6:
                 self.historyN += 1
             else:
@@ -4663,7 +5094,7 @@ class HtmlJavaScriptHighlightingAddon:
             self.restore_position_history(edit_area, self.historyN)
             return
         
-        if scan_code == 333 and Alt and not Ctrl and not Shift: # scan_code == 333 KEY_RIGHT            
+        if key == Key_Right and Alt and not Ctrl and not Shift:           
             if self.historyN > 0:
                 self.historyN -= 1
             else:
@@ -4686,8 +5117,10 @@ class HtmlJavaScriptHighlightingAddon:
         
         self.delayed_pair_highlight(edit_area)
 
+        
+
         # вставка текста с преобразование в жирное, курсив, подчеркивание        
-        if scan_code == 338 and Ctrl and Shift: # scan_code == 338 KEY_INSERT            
+        if key == Key_Insert and Ctrl and Shift:                   
             if Alt:
                 self.simplify_html_from_clipboard(edit_area, True) # вставка текста из буфера обмена с сохранением цвета
             else:
