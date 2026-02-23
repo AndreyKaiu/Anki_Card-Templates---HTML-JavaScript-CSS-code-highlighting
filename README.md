@@ -58,12 +58,12 @@ Fixed an issue that caused Anki to completely crash if text was selected and F2 
 
 The Alt+Left, Alt+Right, and Ctrl+Shift+Insert keys have been restored. Last year, Anki made changes, and this feature stopped working in newer versions. Now I've found the time to fix it. Let me reiterate that the Alt+Left and Alt+Right hotkeys are very important, as they allow you to navigate to specific positions in a long code. Simply place the cursor somewhere, move it left or right, and that position will be remembered. You can then press these hotkeys to quickly navigate to the desired position.
 
-Several more tooltip words have been added.
+Added many new words for tooltips.
 
 Now, if you make changes or change the cursor position, the last active card type and template are remembered. This is essential if you constantly switch between different note types. Of course, you'll have to wait 1-2 seconds for the algorithm to complete, but that's only true for very large codebases.
 
 **VERSIONS**
-- 1.2, date: 2026-02-23. Fixed display issues with transparent color, and restored the functionality of the Alt+Left, Alt+Right, and Ctrl+Shift+Insert hotkeys. Several more tooltip words have been added. The last active card type and template are now remembered if you made changes or changed the cursor position.
+- 1.2, date: 2026-02-23. Fixed display issues with transparent color, and restored the functionality of the Alt+Left, Alt+Right, and Ctrl+Shift+Insert hotkeys. Added many new words for tooltips. The last active card type and template are now remembered if you made changes or changed the cursor position.
  
 - 1.1, date: 2025-09-22. I'm trying to fix an error accessing a component from a timer when the window was already closed. If I catch another similar error, I'll update it again from version 1.1.
   
