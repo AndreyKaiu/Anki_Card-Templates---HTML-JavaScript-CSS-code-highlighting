@@ -50,7 +50,7 @@ The highlighting code is not the most ideal, but it is quite acceptable for simp
 
 If you open the template code in a third-party editor by pressing F2, then do not forget to save the code when switching from it, and when you get to the Anki editor, you can get all the updates by pressing F5. If you make a change to the template code in Anki and you have a third-party editor open, then you also need to save when switching, then the third-party editor will usually notice the changes itself and there will be no problems.
 
-**Changes for version 1.4**
+**Changes for version 1.2**
 
 Display issues with transparent colors have been fixed. Previously, if a fully transparent color was specified, it would be displayed as is, or rather, would not be visible.
 
