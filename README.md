@@ -50,8 +50,21 @@ The highlighting code is not the most ideal, but it is quite acceptable for simp
 
 If you open the template code in a third-party editor by pressing F2, then do not forget to save the code when switching from it, and when you get to the Anki editor, you can get all the updates by pressing F5. If you make a change to the template code in Anki and you have a third-party editor open, then you also need to save when switching, then the third-party editor will usually notice the changes itself and there will be no problems.
 
+**Changes for version 1.4**
+
+Display issues with transparent colors have been fixed. Previously, if a fully transparent color was specified, it would be displayed as is, or rather, would not be visible.
+
+Fixed an issue that caused Anki to completely crash if text was selected and F2 was pressed. The cause was a PyQT update, but we and the AI ​​couldn't pinpoint the exact cause, so it was easier to work around the issue and save hours of time.
+
+The Alt+Left, Alt+Right, and Ctrl+Shift+Insert keys have been restored. Last year, Anki made changes, and this feature stopped working in newer versions. Now I've found the time to fix it. Let me reiterate that the Alt+Left and Alt+Right hotkeys are very important, as they allow you to navigate to specific positions in a long code. Simply place the cursor somewhere, move it left or right, and that position will be remembered. You can then press these hotkeys to quickly navigate to the desired position.
+
+Several more tooltip words have been added.
+
+Now, if you make changes or change the cursor position, the last active card type and template are remembered. This is essential if you constantly switch between different note types. Of course, you'll have to wait 1-2 seconds for the algorithm to complete, but that's only true for very large codebases.
 
 **VERSIONS**
+- 1.2, date: 2026-02-23. Fixed display issues with transparent color, and restored the functionality of the Alt+Left, Alt+Right, and Ctrl+Shift+Insert hotkeys. Several more tooltip words have been added. The last active card type and template are now remembered if you made changes or changed the cursor position.
+ 
 - 1.1, date: 2025-09-22. I'm trying to fix an error accessing a component from a timer when the window was already closed. If I catch another similar error, I'll update it again from version 1.1.
   
 - 1.1, date: 2025-09-10. Corrected and improved:
