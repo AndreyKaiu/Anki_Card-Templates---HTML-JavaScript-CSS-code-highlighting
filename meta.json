@@ -1,12 +1,10 @@
 {
     "name": "Card Templates - HTML JavaScript CSS code highlighting",
-    "mod": 1771719159,
+    "mod": 1779557553,
     "min_point_version": 1,
-    "max_point_version": 250902,
+    "max_point_version": 260500,
     "branch_index": 0,
     "disabled": false,
-    "hint": "",
-    "mark_color": "#aaff00",
     "conflicts": [],
     "update_enabled": true
 }

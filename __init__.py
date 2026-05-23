@@ -16,7 +16,7 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.2, date: 2026-02-22
+# Version 1.3, date: 2026-05-23
 import os
 import json
 import time
@@ -732,7 +732,7 @@ class InputDialogWithHistory:
         
         if result == QDialog.DialogCode.Accepted and text:
             # Сохраняем в историю
-            self._add_to_history(history_key, text)
+            self._add_to_history(history_key, text)            
             self.save_history()
             return text, True
         else:
@@ -1201,7 +1201,7 @@ def ask_user_for_text_find(dialog, title="Brief information that you can underst
     return None
 
 def ask_user_for_text_goto(dialog, title="Brief information that you can understand", 
-                     label="Enter a hint:", default_text=""):
+                     label="Enter a hint:", default_text="", line_num=0):
     """Запрашивает текстовое значение у пользователя с историей."""
     global template_name, gl_model_name
     GotonameH = ""    
@@ -1218,14 +1218,10 @@ def ask_user_for_text_goto(dialog, title="Brief information that you can underst
     input_dialog_with_history = InputDialogWithHistory(nameH=GotonameH)    
     text, ok = input_dialog_with_history.getText(dialog, title, label, default_text)    
     if ok:
+        if line_num > 0:
+            input_dialog_with_history._add_to_history(GotonameH, str(line_num))
         return text
     return None
-
-
-
-
-
-
 
 
 
@@ -1346,6 +1342,32 @@ def goto_line_preserve_offset(editor, line_num):
 
 
 gotoNStr = "1" # номер строки на которую переходим
+
+def gotoSaveN(editor, dialog):
+    """сохраним номер текущей строки для дальнейшего перехода если надо"""
+    global gotoNStr, template_name, gl_model_name
+    cursor = editor.textCursor()
+    curline_num = cursor.blockNumber() + 1
+    gotoNStr = str(curline_num)
+    
+    GotonameH = ""    
+    if html_js_highlighting_addon.current_button == "front_button":
+        suffix = "_front"
+        GotonameH = template_name + suffix        
+    elif html_js_highlighting_addon.current_button == "back_button":
+        suffix = "_back"
+        GotonameH = template_name + suffix
+    else:
+        suffix = "_style"
+        GotonameH = gl_model_name + suffix             
+
+    input_dialog_with_history = InputDialogWithHistory(nameH=GotonameH)    
+    input_dialog_with_history._add_to_history(GotonameH, gotoNStr)
+
+    tooltip(f"add goto {gotoNStr}")
+
+
+
 def gotoN(editor, dialog):
     """переход на строку с номером N если этот номер введет пользователь"""
     global gotoNStr
@@ -1361,15 +1383,20 @@ def gotoN(editor, dialog):
         except Exception:
             return False
 
+    cursor = editor.textCursor()
+    curline_num = cursor.blockNumber() + 1
+    
     if len(seltxt) == 0 or not is_int(seltxt.strip()):
-        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, gotoNStr)
+        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, gotoNStr, curline_num)
     else:
-        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, seltxt.strip())
+        user_find = ask_user_for_text_goto(dialog, goto, gotoEnt, seltxt.strip(), curline_num)
 
     if user_find is None or not user_find.strip():
         return
+        
 
     gotoNStr = user_find.strip()
+
 
     # Преобразуем введённое значение в номер строки
     try:
@@ -1379,6 +1406,8 @@ def gotoN(editor, dialog):
     except Exception:
         tooltip(localizationF("gotoErr", "Please enter a valid positive integer line number"), parent=dialog)
         return
+
+    gotoNStr = str(curline_num)
 
     # Получаем QTextDocument и переходим на нужную строку
     doc = editor.document()
@@ -1399,6 +1428,43 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         self.cur_edit_area = None  
         self.edit_area_selected_text = ""       
         self.edit_area_highlighterF4_text = ""
+
+        self.rehighlight_just_word = False
+
+        self.regExpression_SS_regex1 = QRegularExpression(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
+        self.regExpression_SS_regex2 = QRegularExpression(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
+        self.regExpression_SS_regex3 = QRegularExpression(r"`[^`\\]*(?:\\.[^`\\]*)*`") 
+        self.regExpression_SS_regex1.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.regExpression_SS_regex2.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.regExpression_SS_regex3.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+        
+        # Регулярные выражения для поиска
+        self.regExpression_on_regex = re.compile(r"\bon[a-zA-Z]{3,16}\s*=\s*")
+        self.regExpression_style_regex = re.compile(r"(\bstyle\s*=\s*)|(\bid\s*=\s*)|(\bclass\s*=\s*)")
+        self.regExpression_quotes_regex1 = re.compile(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
+        self.regExpression_quotes_regex2 = re.compile(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
+        self.regExpression_quotes_regex3 = re.compile(r"`[^`\\]*(?:\\.[^`\\]*)*`")  
+        
+
+        self.regExpression_edit_area_highlighterF4_text = QRegularExpression(self.edit_area_highlighterF4_text) 
+        self.regExpression_strp2 = None  
+
+        self.regExpression_colorRGB_regex = QRegularExpression( r'#[a-fA-F0-9]{3,8}\b' )
+        self.regExpression_colorRGB_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+
+        #self.regExpression_colorword_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})(?:[;"\'])' ) убрал, сделаем проще
+        self.regExpression_colorword_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})\b' )
+        self.regExpression_colorword_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+
+        self.regExpression_color_regex = QRegularExpression( r'rgba?\([^\)]+\)|hsla?\([^\)]+\)' )
+        self.regExpression_color_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+
+        # подсветка особых пробельных символов (не включать \u200D так как это для emoji Zero Width Joiner (ZWJ, U+200D)  )
+        self.regExpression_attBg_regex = QRegularExpression("[\u00A0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u200C\u200E\u200F\u202F\u205F\u3000]+")
+        self.regExpression_attBg_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
+
+        self.regExpression_attBg2_regex = QRegularExpression(R"[\t]+")
+        self.regExpression_attBg2_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
 
         self.current_line = -1  # Хранит номер текущей строки
         self.current_line_format = QTextCharFormat()
@@ -1616,17 +1682,72 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         cursor = edit_area.textCursor()
         self.edit_area_selected_text = cursor.selectedText()                      
         
+    # def rehighlight_code(self):
+    #     """Повторно подсвечивает весь код."""
+    #     if self.cur_edit_area and self.cur_edit_area.highlighter:   
+    #         # Устанавливаем курсор в режим "песочные часы"
+    #         QGuiApplication.setOverrideCursor(WaitCursor)
+    #         try:
+    #             self.edit_area_highlighterF4_text = self.edit_area_selected_text
+    #             # Выполняем подсветку
+    #             self.cur_edit_area.highlighter.rehighlight()
+    #         finally:
+    #             # Возвращаем курсор в нормальное состояние
+    #             QGuiApplication.restoreOverrideCursor()
+
+
     def rehighlight_code(self):
-        """Повторно подсвечивает весь код."""
-        if self.cur_edit_area and self.cur_edit_area.highlighter:   
-            # Устанавливаем курсор в режим "песочные часы"
+        if self.cur_edit_area and self.cur_edit_area.highlighter:
             QGuiApplication.setOverrideCursor(WaitCursor)
             try:
-                self.edit_area_highlighterF4_text = self.edit_area_selected_text
-                # Выполняем подсветку
+                viewport = self.cur_edit_area.viewport()
+                viewport.setUpdatesEnabled(False)
+                self.cur_edit_area.setUpdatesEnabled(False)                
+
+                self.edit_area_highlighterF4_text = self.edit_area_selected_text               
+                self.regExpression_edit_area_highlighterF4_text = QRegularExpression(re.escape(self.edit_area_highlighterF4_text))
+
+                strp1 = "{[(<}])>"
+                strp2 = "}])>{[(<"
+                findp = strp1.find(self.edit_area_highlighterF4_text)
+                if findp >= 0:                                  
+                    self.regExpression_strp2 = QRegularExpression(re.escape( strp2[findp] ))
+                else:
+                    self.regExpression_strp2 = None
+
+                 
+
+                self.fmt1 = QTextCharFormat()
+                if theme_night:
+                    self.fmt1.setBackground(QColor("#5e5e30"))
+                    self.fmt1.setForeground(QColor("yellow"))
+                else:
+                    self.fmt1.setBackground(QColor("#cfcf6d"))
+                    self.fmt1.setForeground(QColor("blue"))
+
+                self.fmt2 = QTextCharFormat()
+                if theme_night:
+                    self.fmt2.setBackground(QColor("#cfcf6d"))
+                    self.fmt2.setForeground(QColor("#e80af7"))
+                else:
+                    self.fmt2.setBackground(QColor("#cfcf6d"))
+                    self.fmt2.setForeground(QColor("#e80af7"))
+
+
+
+                self.cur_edit_area.setUpdatesEnabled(False)
+                self.cur_edit_area.blockSignals(True)
+                
                 self.cur_edit_area.highlighter.rehighlight()
-            finally:
-                # Возвращаем курсор в нормальное состояние
+                
+                
+
+            finally:                
+                self.cur_edit_area.blockSignals(False)
+                viewport = self.cur_edit_area.viewport()
+                viewport.setUpdatesEnabled(True)
+                self.cur_edit_area.setUpdatesEnabled(True)
+
                 QGuiApplication.restoreOverrideCursor()
 
          
@@ -1634,7 +1755,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
 
     def add_highlighting_rule(self, pattern, color_format):
-        """Добавляет правило подсветки в зависимости от версии PyQt."""
+        """Добавляет правило подсветки в зависимости от версии PyQt."""        
         if pyqt_version == "PyQt6":
             regex = QRegularExpression(pattern)
         else:  # PyQt5
@@ -1642,7 +1763,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         self.highlighting_rules.append((regex, color_format))
 
     def add_highlighting_ruleComm(self, pattern, color_format):
-        """Добавляет правило подсветки в зависимости от версии PyQt."""
+        """Добавляет правило подсветки в зависимости от версии PyQt."""        
         if pyqt_version == "PyQt6":
             regex = QRegularExpression(pattern)
         else:  # PyQt5
@@ -1652,6 +1773,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
     def highlightBlockIdxComm(self, text, idx):
         """=ru= Метод для раскрашивания даже в комментариях"""
+        
         if text is None or len(text) == 0:
             return
         # надо обработать все правила для self.highlighting_rulesComm - даже в комментариях
@@ -1785,10 +1907,12 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                         return
 
 
+        
+    
         # надо обработать все правила, так как это не комментарий
-        if pyqt_version == "PyQt6":
+        if pyqt_version == "PyQt6":            
             for pattern, format in self.highlighting_rules:            
-                match_iterator = pattern.globalMatch(text)
+                match_iterator = pattern.globalMatch(text)                
                 while match_iterator.hasNext():
                     match = match_iterator.next()
                     lci = match.lastCapturedIndex()                    
@@ -1796,7 +1920,8 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                         self.setFormat(idx + match.capturedStart(), match.capturedLength(), format)
                     else: # =ru= иначе все группы, остальные пассивные могут быть (?: )
                         for i in range(1, lci+1):      
-                            self.setFormat(idx + match.capturedStart(i), match.capturedLength(i), format)
+                            self.setFormat(idx + match.capturedStart(i), match.capturedLength(i), format)                
+
         else: # if pyqt_version == "PyQt5":
             for pattern, format in self.highlighting_rules:
                 pos = 0  # Начальная позиция для поиска
@@ -1817,29 +1942,22 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
 
     def highlight_simple_strings(self, text, offset):
-        """Подсветка строковых значений без исключений."""                        
-        regex1 = QRegularExpression(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
-        regex2 = QRegularExpression(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
-        regex3 = QRegularExpression(r"`[^`\\]*(?:\\.[^`\\]*)*`")  
-
-        regex1.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        regex2.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        regex3.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        iterator = regex1.globalMatch(text)
+        """Подсветка строковых значений без исключений."""                                
+        iterator = self.regExpression_SS_regex1.globalMatch(text)
         while iterator.hasNext():
             match = iterator.next()
             start = match.capturedStart()
             length = match.capturedLength()
             self.setFormat(offset + start, length, self.string_color)
             self.highlightBlockIdxComm(text, offset) # раскраска даже в комментариях
-        iterator = regex2.globalMatch(text)
+        iterator = self.regExpression_SS_regex2.globalMatch(text)
         while iterator.hasNext():
             match = iterator.next()
             start = match.capturedStart()
             length = match.capturedLength()
             self.setFormat(offset + start, length, self.string_color)
             self.highlightBlockIdxComm(text, offset) # раскраска даже в комментариях
-        iterator = regex3.globalMatch(text)
+        iterator =self.regExpression_SS_regex3.globalMatch(text)
         while iterator.hasNext():
             match = iterator.next()
             start = match.capturedStart()
@@ -1850,42 +1968,60 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
     def highlightBlock(self, text):   
         """=ru= Метод для раскрашивания блока (строки) текста"""     
-                    
+                            
         # если это первая строка
         if self.currentBlock().blockNumber() == 0:
-            self.mult_block_idx = -1 # =ru= индекс блока            
+            self.mult_block_idx = -1 # =ru= индекс блока      
 
-        self.highlightBlockIdx(text, 0)              
 
-        
-
-        # Регулярные выражения для поиска
-        on_regex = re.compile(r"\bon[a-zA-Z]{3,16}\s*=\s*")
-        style_regex = re.compile(r"(\bstyle\s*=\s*)|(\bid\s*=\s*)|(\bclass\s*=\s*)")
-        quotes_regex1 = re.compile(r"\"[^\"\\]*(?:\\.[^\"\\]*)*\"")        
-        quotes_regex2 = re.compile(r"'[^'\\]*(?:\\.[^'\\]*)*'")  
-        quotes_regex3 = re.compile(r"`[^`\\]*(?:\\.[^`\\]*)*`")  
+        self.highlightBlockIdx(text, 0)      
+                
         position = 0
         lenText = len(text)
         cntErr = 10000
+        
+
+        # Подсветка выделенного текста edit_area_highlighterF4_text
+        if self.edit_area_highlighterF4_text and len(self.edit_area_highlighterF4_text) >= 1:
+                         
+            match_iter = self.regExpression_edit_area_highlighterF4_text.globalMatch(text)            
+            while match_iter.hasNext():
+                match = match_iter.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, self.fmt1)
+
+            # особо для парных
+            if len(self.edit_area_highlighterF4_text) == 1 and self.regExpression_strp2:
+                match_iter = self.regExpression_strp2.globalMatch(text)
+                while match_iter.hasNext():
+                    match = match_iter.next()
+                    start = match.capturedStart()
+                    length = match.capturedLength()
+                    self.setFormat(start, length, self.fmt2)
+
+
         while position < lenText:       
             # Ищем ближайшие совпадения
-            on_match = on_regex.search(text, position)
-            style_match = style_regex.search(text, position)
+            on_match = self.regExpression_on_regex.search(text, position)            
+            style_match = self.regExpression_style_regex.search(text, position)
+            
             # Определяем позиции совпадений
             on_pos = on_match.start() if on_match else -1
             style_pos = style_match.start() if style_match else -1     
             # Выбираем минимальную позицию
             next_pos = min(pos for pos in [on_pos, style_pos] if pos != -1) if on_pos != -1 or style_pos != -1 else lenText
+            
             # Обрабатываем текст до найденной позиции
             sub_text = text[position:next_pos]            
             self.highlight_simple_strings(sub_text, position)
+            
             position = next_pos            
             # Пропускаем найденное слово и его значение в кавычках
             if position < lenText:                
-                match1 = quotes_regex1.search(text, position)                
-                match2 = quotes_regex2.search(text, position)                  
-                match3 = quotes_regex3.search(text, position)  
+                match1 = self.regExpression_quotes_regex1.search(text, position)                
+                match2 = self.regExpression_quotes_regex2.search(text, position)                  
+                match3 = self.regExpression_quotes_regex3.search(text, position)  
                 posN = -1
                 pos1 = match1.start() if match1 else -1
                 if pos1 != -1:
@@ -1900,24 +2036,24 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                     position = match3.end()
                     posN = pos3
                 if posN == -1:
-                    position += 1                                         
+                    position += 1     
 
+           
             cntErr -= 1
             if(cntErr <= 0):
                 position = lenText
                 log.error("cntErr def highlightBlock(self, text): while position < lenText: ")  # Запись в лог
                 break 
                 
+
+
         # Обрабатываем оставшийся текст
         if position < lenText:
             self.highlight_simple_strings(text[position:], position)
 
-               
-
-        # Подсветка слов с цветами #
-        color_regex = QRegularExpression( r'#[a-fA-F0-9]{3,8}\b' )
-        color_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        color_iter = color_regex.globalMatch(text)
+        
+        # Подсветка слов с цветами #        
+        color_iter = self.regExpression_colorRGB_regex.globalMatch(text)
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(0)
@@ -1940,11 +2076,10 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
             self.setFormat(match.capturedStart(0), match.capturedLength(0), fmt)
 
-        # Подсветка слов заданные словом цвета               
-        #color_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})(?:[;"\'])' ) убрал, сделаем проще
-        color_regex = QRegularExpression( r'\b([a-zA-Z]{3,20})\b' )
-        color_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        color_iter = color_regex.globalMatch(text)
+
+
+        # Подсветка слов заданные словом цвета        
+        color_iter = self.regExpression_colorword_regex.globalMatch(text)
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(1)
@@ -1968,10 +2103,9 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
             self.setFormat(match.capturedStart(1), match.capturedLength(1), fmt)    
 
-        # Подсветка слов с rgb shl
-        color_regex = QRegularExpression( r'rgba?\([^\)]+\)|hsla?\([^\)]+\)' )
-        color_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        color_iter = color_regex.globalMatch(text)
+
+        # Подсветка слов с rgb shl        
+        color_iter = self.regExpression_color_regex.globalMatch(text)
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(0)
@@ -1997,65 +2131,17 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(match.capturedStart(0), 4, fmt)
 
         
-        # Подсветка выделенного текста edit_area_highlighterF4_text
-        if self.edit_area_highlighterF4_text and len(self.edit_area_highlighterF4_text) >= 1:
-            fmt = QTextCharFormat()
-            if theme_night:
-                fmt.setBackground(QColor("#5e5e30"))
-                fmt.setForeground(QColor("yellow"))
-            else:
-                fmt.setBackground(QColor("#cfcf6d"))
-                fmt.setForeground(QColor("blue"))
-           
-
-            pattern = QRegularExpression(re.escape(self.edit_area_highlighterF4_text))    
-            match_iter = pattern.globalMatch(text)
-            while match_iter.hasNext():
-                match = match_iter.next()
-                start = match.capturedStart()
-                length = match.capturedLength()
-                self.setFormat(start, length, fmt)
-
-            # особо для парных
-            if len(self.edit_area_highlighterF4_text) == 1:
-                strp1 = "{[(<}])>"
-                strp2 = "}])>{[(<"
-                findp = strp1.find(self.edit_area_highlighterF4_text)
-                if findp >= 0:              
-                    fmt = QTextCharFormat()
-                    if theme_night:
-                        fmt.setBackground(QColor("#cfcf6d"))
-                        fmt.setForeground(QColor("#e80af7"))
-                    else:
-                        fmt.setBackground(QColor("#cfcf6d"))
-                        fmt.setForeground(QColor("#e80af7"))
-
-                    pattern = QRegularExpression(re.escape( strp2[findp] ))
-                    match_iter = pattern.globalMatch(text)
-                    while match_iter.hasNext():
-                        match = match_iter.next()
-                        start = match.capturedStart()
-                        length = match.capturedLength()
-                        self.setFormat(start, length, fmt)
-
-        
-        # подсветка особых пробельных символов (не включать \u200D так как это для emoji Zero Width Joiner (ZWJ, U+200D)  )        
-        attBg_regex = QRegularExpression("[\u00A0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u200C\u200E\u200F\u202F\u205F\u3000]+")
-        attBg_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        attBg_iter = attBg_regex.globalMatch(text)
+        # подсветка особых пробельных символов (не включать \u200D так как это для emoji Zero Width Joiner (ZWJ, U+200D)  )  
+        attBg_iter = self.regExpression_attBg_regex.globalMatch(text)
         while attBg_iter.hasNext():
             match = attBg_iter.next()
             self.setFormat(match.capturedStart(0), match.capturedLength(0), self.keyword_attention_colorRed)
-        # табуляция допустима в некоторых тэгах, так что синим
-        attBg_regex = QRegularExpression(R"[\t]+")
-        attBg_regex.setPatternOptions(QRegularExpression.PatternOption.CaseInsensitiveOption)
-        attBg_iter = attBg_regex.globalMatch(text)
+        # табуляция допустима в некоторых тэгах, так что синим                
+        attBg_iter = self.regExpression_attBg2_regex.globalMatch(text)
         while attBg_iter.hasNext():
             match = attBg_iter.next()
             self.setFormat(match.capturedStart(0), match.capturedLength(0), self.keyword_attention_colorBlue)
-      
-
-
+       
 
 
 def show_text_dialog(title: str, content: str, html: bool = False):
@@ -2268,7 +2354,8 @@ class HtmlJavaScriptHighlightingAddon:
             "scroll-timeline-axis", "margin-trim", "padding-trim",
             "accent-color", "color-scheme", "field-sizing", "interpolate-size",
             "lighting-color", "flood-color", "flood-opacity",
-            "nightMode","card", "important",            
+            "nightMode","card", "important", "hint:", "text:",  "type:",  "cloze:",
+            "Tags", "Type", "Deck", "Subdeck", "CardFlag", "Card", "FrontSide", "Front", "Back", "FieldName",
             "left", "right", "center", "justify", "start", "end", "match-parent", "justify-all",
             "transparent", "currentColor",
             
@@ -2667,6 +2754,11 @@ class HtmlJavaScriptHighlightingAddon:
         """
         if pos_in_line <= 1:  # Нужно как минимум 2 символа для поиска
             return -1
+        if len(text) < 1:
+            return -1
+        
+        if pos_in_line > (len(text)-1):
+            pos_in_line = len(text) - 1
         
         i = pos_in_line - 1  # начинаем с позиции перед курсором
         stack = []  # стек для отслеживания открытых строк/комментариев
@@ -2809,9 +2901,9 @@ class HtmlJavaScriptHighlightingAddon:
         else:
             char = sel[0]
         
-        pairs = {'<': '>', '{': '}', '(': ')', '[': ']', '}': '{', ')': '(', ']': '['}
-        open_chars = '{(['
-        close_chars = '})]'
+        pairs = {'<': '>', '{': '}', '(': ')', '[': ']', '>': '<', '}': '{', ')': '(', ']': '['}
+        open_chars = '<{(['
+        close_chars = '>})]'
 
         if char in open_chars:
             direction = 1
@@ -2819,7 +2911,7 @@ class HtmlJavaScriptHighlightingAddon:
             direction = -1
         else:
             direction = 1
-        
+
 
         # === Скобки ===
         if char in pairs:
@@ -2836,8 +2928,13 @@ class HtmlJavaScriptHighlightingAddon:
                 len_find_comm = 0
                 findNR = False    
                 nextN = 0            
-                n = 0
+                n = 0                
+                max_find = 10000 # ограничим длину поиска в 10000 знаков
+
                 while True:
+                    if max_find < 1:
+                        break;
+                    max_find -= 1
                     moved = cur.movePosition(NextCharacter if direction == 1 else PreviousCharacter)
                     if not moved:
                         break
@@ -3083,8 +3180,12 @@ class HtmlJavaScriptHighlightingAddon:
                     prev_c = ""
                     n = 0
                     comm = False
+                    max_find = 10000 # ограничим длину поиска в 10000 знаков
                     
                     while cur.movePosition(NextCharacter): # перемещаемся к следующему символу
+                        if max_find < 1:
+                            break;
+                        max_find -= 1
                         c = cur.document().characterAt(cur.position())   
                         prev_c += c
                         n += 1
@@ -3168,8 +3269,12 @@ class HtmlJavaScriptHighlightingAddon:
                     prev_c = ""
                     n = 0
                     comm = False
+                    max_find = 10000 # ограничим длину поиска в 10000 знаков
 
                     while cur.movePosition(PreviousCharacter): # перемещаемся к предыдущему символу
+                        if max_find < 1:
+                            break;
+                        max_find -= 1
                         c = cur.document().characterAt(cur.position())                           
                         prev_c += c
                         n += 1
@@ -3984,6 +4089,8 @@ class HtmlJavaScriptHighlightingAddon:
         shortcut_CtrlO.activated.connect(lambda: self.load_file_into_editor(edit_area))  
         shortcut_CtrlG = QShortcut(QKeySequence("Ctrl+G"), edit_area)
         shortcut_CtrlG.activated.connect(lambda: gotoN(edit_area, mw.app.activeWindow()))
+        shortcut_CtrlShiftG = QShortcut(QKeySequence("Ctrl+Shift+G"), edit_area)
+        shortcut_CtrlShiftG.activated.connect(lambda: gotoSaveN(edit_area, mw.app.activeWindow()))
 
         shortcut_CtrlF3 = QShortcut(QKeySequence("Ctrl+F3"), edit_area)
         shortcut_CtrlF3.activated.connect(lambda: CtrlF3())
@@ -4575,7 +4682,8 @@ class HtmlJavaScriptHighlightingAddon:
         Menu_F1 = localizationF("Menu_F1","show this window")
         Menu_CtrlH = localizationF("Menu_F1","show this window")        
         Menu_CtrlShiftTB = localizationF("Menu_CtrlShiftTB","if the selected color code is in the format #RRGGBB, then it will change only it") 
-        goto = localizationF("Menu_goto","go to line with number")  
+        goto = localizationF("Menu_goto","go to line with number")
+        Menu_CtrlShiftG = localizationF("Menu_CtrlShiftG","remember the line number")
         Menu_AltLeft = localizationF("Menu_AltLeft","to the previous cursor position (where the cursor changed position with keys)")  
         Menu_AltRight = localizationF("Menu_AltRight","to the next cursor position (where the cursor changed position with keys)")          
 
@@ -4620,6 +4728,7 @@ class HtmlJavaScriptHighlightingAddon:
 <br>Shift+F3 — {Menu_ShiftF3}
 <br>Ctrl+H — {Menu_CtrlH}
 <br>Ctrl+G — {goto}
+<br>Ctrl+Shift+G — {Menu_CtrlShiftG}
 <br>Ctrl+S — {Menu_CtrlS}
 <br>Ctrl+O — {Menu_CtrlO}   
 <br>Ctrl+V — {Menu_CtrlV}
@@ -5009,11 +5118,14 @@ class HtmlJavaScriptHighlightingAddon:
         cur_pos = cursor.selectionStart()
         cur_pos_end = cursor.selectionEnd()
         # для стиля всегда в нулевой хранится
-        if self.current_button == "style_button":
-            history = self.cursor_positions[0][self.current_button]["position_history"]
-        else:
-            history = self.cursor_positions[thisCardLayout.ord][self.current_button]["position_history"]
-
+        try:
+            if self.current_button == "style_button":
+                history = self.cursor_positions[0][self.current_button]["position_history"]
+            else:
+                history = self.cursor_positions[thisCardLayout.ord][self.current_button]["position_history"]
+        except KeyError:
+            return
+        
         # Поиск похожей позиции в истории (с допуском ±400)
         found_idx = None
         for idx, entry in enumerate(history):
@@ -5043,10 +5155,13 @@ class HtmlJavaScriptHighlightingAddon:
         cursor = edit_area.textCursor()
 
         # для стиля всегда получаем из нулевой
-        if self.current_button == "style_button":
-            history = self.cursor_positions[0][self.current_button]["position_history"]
-        else:
-            history = self.cursor_positions[thisCardLayout.ord][self.current_button]["position_history"]
+        try:
+            if self.current_button == "style_button":
+                history = self.cursor_positions[0][self.current_button]["position_history"]
+            else:
+                history = self.cursor_positions[thisCardLayout.ord][self.current_button]["position_history"]
+        except KeyError:
+            return
                  
         position_data = history[n]
 
