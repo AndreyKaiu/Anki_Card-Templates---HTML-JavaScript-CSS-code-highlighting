@@ -62,7 +62,17 @@ Added many new words for tooltips.
 
 Now, if you make changes or change the cursor position, the last active card type and template are remembered. This is essential if you constantly switch between different note types. Of course, you'll have to wait 1-2 seconds for the algorithm to complete, but that's only true for very large codebases.
 
+**Changes for version 1.3**
+
+Since searching backwards when entering "())" took a very long time even with 3,500 lines of code (approximately 100,000 characters), the maximum spacing between parentheses has been limited to 10,000 characters.
+
+Added the ability to save the current line number (hotkey "Ctrl+Shift+G"), allowing you to quickly jump to that line later using "Ctrl+G." Go to line will now automatically remember the current line and prompt you to jump to it next time (this is useful if you frequently need to jump between two line numbers).
+
+Other minor edits and additions.
+
 **VERSIONS**
+- 1.3, date: 2026-05-23. Fixed an error when entering "())". Added the ability to save the line number with "Ctrl+Shift+G" 
+  
 - 1.2, date: 2026-02-23. Fixed display issues with transparent color, and restored the functionality of the Alt+Left, Alt+Right, and Ctrl+Shift+Insert hotkeys. Added many new words for tooltips. The last active card type and template are now remembered if you made changes or changed the cursor position.
  
 - 1.1, date: 2025-09-22. I'm trying to fix an error accessing a component from a timer when the window was already closed. If I catch another similar error, I'll update it again from version 1.1.
