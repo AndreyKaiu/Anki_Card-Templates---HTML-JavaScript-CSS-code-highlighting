@@ -16,7 +16,7 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.3, date: 2026-05-23
+# Version 1.4, date: 2026-08-15
 import os
 import json
 import time
@@ -28,10 +28,12 @@ import logging
 import tempfile
 import subprocess
 import anki.lang
+import aqt.utils
 
 from logging import Logger, FileHandler, Formatter
 from pathlib import Path
 from datetime import datetime, timedelta
+from aqt.utils import *
 from aqt.utils import showText, askUser, tr 
 from anki.lang import without_unicode_isolation
 from aqt.clayout import CardLayout
@@ -89,9 +91,16 @@ except ImportError:
     from PyQt5.QtCore import QRegExp, Qt, QSize, QEvent, QTimer, QCoreApplication
     pyqt_version = "PyQt5"
 
-if pyqt_version == "PyQt6":    
+if pyqt_version == "PyQt6":  
+    QTextCursorLeft = QTextCursor.MoveOperation.Left    
+    QTextCursorRight =QTextCursor.MoveOperation.Right  
+    QTextCursorEnd =QTextCursor.MoveOperation.End
     KeepAnchor = QTextCursor.MoveMode.KeepAnchor
     MoveAnchor = QTextCursor.MoveMode.MoveAnchor
+    StartOfBlock = QTextCursor.MoveOperation.StartOfBlock
+    EndOfBlock = QTextCursor.MoveOperation.EndOfBlock
+    NextBlock = QTextCursor.MoveOperation.NextBlock    
+    StartOfLine = QTextCursor.MoveOperation.StartOfLine
     NextCharacter = QTextCursor.MoveOperation.NextCharacter
     PreviousCharacter = QTextCursor.MoveOperation.PreviousCharacter
     SingleUnderline = QTextCharFormat.UnderlineStyle.SingleUnderline 
@@ -122,6 +131,7 @@ if pyqt_version == "PyQt6":
     Key_V = Qt.Key.Key_V
     Key_Home = Qt.Key.Key_Home
     Key_End = Qt.Key.Key_End
+    Key_Backspace = Qt.Key.Key_Backspace
     Key_F1 = Qt.Key.Key_F1
     Key_0 = Qt.Key.Key_0
     Key_Slash = Qt.Key.Key_Slash
@@ -155,10 +165,17 @@ if pyqt_version == "PyQt6":
     Key_Left = Qt.Key.Key_Left
     Key_Insert = Qt.Key.Key_Insert
     
-else:
+else:  
+    QTextCursorLeft = QTextCursor.Left    
+    QTextCursorRight =QTextCursor.Right  
+    QTextCursorEnd =QTextCursor.End
+    StartOfLine = QTextCursor.StartOfLine
     KeepAnchor = QTextCursor.KeepAnchor
     MoveAnchor = QTextCursor.MoveAnchor
     NextCharacter = QTextCursor.NextCharacter
+    StartOfBlock = QTextCursor.StartOfBlock
+    EndOfBlock = QTextCursor.EndOfBlock
+    NextBlock = QTextCursor.NextBlock   
     PreviousCharacter = QTextCursor.PreviousCharacter
     SingleUnderline = QTextCharFormat.SingleUnderline 
     WA_TransparentForMouseEvents = Qt.WA_TransparentForMouseEvents
@@ -188,6 +205,7 @@ else:
     Key_V = Qt.Key_V
     Key_Home = Qt.Key_Home
     Key_End = Qt.Key_End
+    Key_Backspace = Qt.Key_Backspace
     Key_F1 = Qt.Key_F1
     Key_0 = Qt.Key_0
     Key_Slash = Qt.Key_Slash
@@ -219,6 +237,20 @@ else:
     Key_Right = Qt.Key_Right
     Key_Left = Qt.Key_Left
     Key_Insert = Qt.Key_Insert
+
+
+def QColorRRGGBBAA(s): 
+    """Converts #RRGGBBAA to QColor (interpreted as RRGGBBAA, not AARRGGBB)"""
+    if s.startswith('#') and len(s) == 9:  # # + 8 characters
+        hex_str = s[1:] 
+        # If all 8 characters are correct, we consider it to be RRGGBBAA
+        # and rearrange it as AARRGGBB for QColor
+        rr, gg, bb, aa = hex_str[0:2], hex_str[2:4], hex_str[4:6], hex_str[6:8]
+        # Collect like #AARRGGBB
+        new_s = '#' + aa + rr + gg + bb
+        return QColor(new_s)
+    else:
+        return QColor(s) 
 
 # ========================= LOGGING ===========================================
 log: Logger = logging.getLogger(__name__)
@@ -411,11 +443,11 @@ def on_card_layout_will_show(card_layout: CardLayout):
         if modifiers == ShiftModifier:            
             cursor = editor.textCursor()
             start_pos = cursor.position() - 1
-            cursor.movePosition(QTextCursor.MoveOperation.Left)  # Перемещаем курсор на одну позицию назад
+            cursor.movePosition(QTextCursorLeft)  # Перемещаем курсор на одну позицию назад
             editor.setTextCursor(cursor)  # Устанавливаем курсор
             found = editor.find(text, FindBackward)
             if not found:                
-                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.movePosition(QTextCursorEnd)
                 editor.setTextCursor(cursor)
                 found = editor.find(text, FindBackward)
                 if not found:
@@ -529,6 +561,40 @@ def on_card_layout_will_show(card_layout: CardLayout):
     
 # Подключаем хук
 card_layout_will_show.append(on_card_layout_will_show)
+
+
+
+
+def my_openLink(link: str | QUrl) -> None:
+    # Подменяем адрес справки для стран, у которых она сделана стандартно    
+    tooltip(tr.qt_misc_loading(), period=1000)
+    with no_bundled_libs():        
+        if mw and mw.pm:
+            lang = anki.lang.current_lang
+            print("lang=", lang)
+            if lang == 'ru':
+                link = link.replace("https://docs.ankiweb.net/", "https://andreykaiu.github.io/anki-manual-ru/")
+            elif lang == 'pl':
+                link = link.replace("https://docs.ankiweb.net/", "https://platynowy.github.io/anki-manual/")
+            elif lang == 'pt':
+                link = link.replace("https://docs.ankiweb.net/", "https://mizerablebr.github.io/anki-manual/")
+            elif lang == 'pt-BR':
+                link = link.replace("https://docs.ankiweb.net/", "https://mizerablebr.github.io/anki-manual/")
+            elif lang == 'uk':
+                link = link.replace("https://docs.ankiweb.net/", "https://astropsy999.github.io/anki-manual/")
+            elif lang == 'ar':
+                link = link.replace("https://docs.ankiweb.net/", "https://www.abdnh.net/anki-manual/")
+            elif lang == 'zh-CN':
+                link = link.replace("https://docs.ankiweb.net/", "https://open-spaced-repetition.github.io/anki-manual-zh-CN/")
+            elif lang == 'zh-TW':
+                link = link.replace("https://docs.ankiweb.net/", "https://open-spaced-repetition.github.io/anki-manual-zh-CN/")
+            
+                
+        QDesktopServices.openUrl(QUrl(link))
+
+aqt.utils.openLink = my_openLink
+
+
 
 def CtrlF4():
     global thisCardLayout    
@@ -1087,7 +1153,7 @@ class LineNumberArea(QWidget):
         self.setStyleSheet("background-color: "+ colors["line_number_background_color"] + "; color: " 
                         + colors["line_number_text_color"] + ";")  
         painter = QPainter(self)
-        painter.fillRect(event.rect(), QColor(colors["line_number_background_color"]))
+        painter.fillRect(event.rect(), QColorRRGGBBAA(colors["line_number_background_color"]))
 
         
 
@@ -1118,12 +1184,12 @@ class LineNumberArea(QWidget):
 
                     # Цвет для текущей строки
                     if block_number == current_block_number:
-                        painter.setPen( QColor(colors["current_line_color"]) )  # цвет текущей строки 
+                        painter.setPen( QColorRRGGBBAA(colors["current_line_color"]) )  # цвет текущей строки 
                         font = painter.font()
                         font.setBold(True)
                         painter.setFont(font)
                     else:                    
-                        painter.setPen(QColor( colors["line_number_text_color"] )) 
+                        painter.setPen(QColorRRGGBBAA( colors["line_number_text_color"] )) 
                         font = painter.font()
                         font.setBold(False)
                         painter.setFont(font)
@@ -1134,7 +1200,7 @@ class LineNumberArea(QWidget):
 
                     if block_number == current_block_number:
                         # Горизонтальная линия сверху
-                        pen = QPen(QColor(colors["current_line_color"]))
+                        pen = QPen(QColorRRGGBBAA(colors["current_line_color"]))
                         pen.setWidthF(0.5)
                         painter.setPen(pen)
                         painter.drawLine(0, int(top), self.width(), int(top))
@@ -1146,7 +1212,7 @@ class LineNumberArea(QWidget):
                         # painter.drawLine(0, int(top + line_height - 1), self.width(), int(top + line_height - 1))
 
                 block = block.next()
-                cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+                cursor.movePosition(NextBlock)
                 rect = self.editor.cursorRect(cursor)
                 top = rect.top()
                 block_number += 1
@@ -1468,7 +1534,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
 
         self.current_line = -1  # Хранит номер текущей строки
         self.current_line_format = QTextCharFormat()
-        self.current_line_format.setBackground(QColor(colors["current_line_color"]))
+        self.current_line_format.setBackground(QColorRRGGBBAA(colors["current_line_color"]))
 
         self.mult_block_start = ["<!--", "/*", "= `", "=`"]
         self.mult_block_end = ["-->", "*/", "`", "`"]
@@ -1482,69 +1548,69 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
       
         text_color = QTextCharFormat()        
         try:
-            text_color.setForeground(QColor(colors["text_color"]))
+            text_color.setForeground(QColorRRGGBBAA(colors["text_color"]))
         except Exception as e: logError(e)
 
         error_color = QTextCharFormat()        
         try:
-            error_color.setForeground(QColor(colors["error_color"]))
+            error_color.setForeground(QColorRRGGBBAA(colors["error_color"]))
         except Exception as e: logError(e)
 
         # Defining the orange format for Anki fields =br= Definição do formato laranja para campos do Anki        
         anki_field_color = QTextCharFormat()
         try:
-            anki_field_color.setForeground(QColor(colors["x_anki_field_color"]))
+            anki_field_color.setForeground(QColorRRGGBBAA(colors["x_anki_field_color"]))
         except Exception as e: logError(e)
 
         brackets_curly_color = QTextCharFormat()
         try:
-            brackets_curly_color.setForeground(QColor(colors["x_brackets_curly_color"]))
+            brackets_curly_color.setForeground(QColorRRGGBBAA(colors["x_brackets_curly_color"]))
         except Exception as e: logError(e)
         brackets_round_color = QTextCharFormat()        
         try:
-            brackets_round_color.setForeground(QColor(colors["x_brackets_round_color"]))
+            brackets_round_color.setForeground(QColorRRGGBBAA(colors["x_brackets_round_color"]))
         except Exception as e: logError(e)
         brackets_square_color = QTextCharFormat()
         try:
-            brackets_square_color.setForeground(QColor(colors["x_brackets_square_color"]))
+            brackets_square_color.setForeground(QColorRRGGBBAA(colors["x_brackets_square_color"]))
         except Exception as e: logError(e)
 
         self.comment_color = QTextCharFormat()
         try:
-            self.comment_color.setForeground(QColor(colors["x_comment_color"]))
+            self.comment_color.setForeground(QColorRRGGBBAA(colors["x_comment_color"]))
         except Exception as e: logError(e)
 
         css_id_color = QTextCharFormat()
         try:
-            css_id_color.setForeground(QColor(colors["x_css_id_color"]))
+            css_id_color.setForeground(QColorRRGGBBAA(colors["x_css_id_color"]))
         except Exception as e: logError(e)
 
         css_class_color = QTextCharFormat()
         try:
-            css_class_color.setForeground(QColor(colors["x_css_class_color"]))
+            css_class_color.setForeground(QColorRRGGBBAA(colors["x_css_class_color"]))
         except Exception as e: logError(e)
 
 
         css_property_color = QTextCharFormat()
         try:
-            css_property_color.setForeground(QColor(colors["x_css_property_color"]))
+            css_property_color.setForeground(QColorRRGGBBAA(colors["x_css_property_color"]))
         except Exception as e: logError(e)
 
         html_tag_attr_color = QTextCharFormat()
         try:
-            html_tag_attr_color.setForeground(QColor(colors["x_html_tag_attr_color"]))
+            html_tag_attr_color.setForeground(QColorRRGGBBAA(colors["x_html_tag_attr_color"]))
         except Exception as e: logError(e)
 
         html_tag_color = QTextCharFormat()
         try:
-            html_tag_color.setForeground(QColor(colors["x_html_tag_color"]))
+            html_tag_color.setForeground(QColorRRGGBBAA(colors["x_html_tag_color"]))
             html_tag_color.setFontWeight(QFont.Weight.Bold.value if pyqt_version == "PyQt6" else QFont.Bold)
         except Exception as e: logError(e)
 
 
         self.keyword_attention_color = QTextCharFormat()        
         try:
-            self.keyword_attention_color.setForeground(QColor(colors["x_keyword_attention_color"]))
+            self.keyword_attention_color.setForeground(QColorRRGGBBAA(colors["x_keyword_attention_color"]))
             self.keyword_attention_color.setFontWeight(QFont.Weight.Bold.value if pyqt_version == "PyQt6" else QFont.Bold)
         except Exception as e: logError(e)
         self.keyword_attention_colorRed = QTextCharFormat()        
@@ -1553,7 +1619,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                 self.keyword_attention_colorRed.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
             else:
                 self.keyword_attention_colorRed.setUnderlineStyle(QTextCharFormat.WaveUnderline)
-            self.keyword_attention_colorRed.setUnderlineColor(QColor("red"))  # Цвет подчеркивания
+            self.keyword_attention_colorRed.setUnderlineColor(QColorRRGGBBAA("red"))  # Цвет подчеркивания
         except Exception as e: logError(e)
         self.keyword_attention_colorBlue = QTextCharFormat()        
         try:
@@ -1561,42 +1627,42 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
                 self.keyword_attention_colorBlue.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
             else:
                 self.keyword_attention_colorBlue.setUnderlineStyle(QTextCharFormat.WaveUnderline)
-            self.keyword_attention_colorBlue.setUnderlineColor(QColor("blue"))  # Цвет подчеркивания
+            self.keyword_attention_colorBlue.setUnderlineColor(QColorRRGGBBAA("blue"))  # Цвет подчеркивания
         except Exception as e: logError(e)
 
         keyword_block_color = QTextCharFormat()
         try:
-            keyword_block_color.setForeground(QColor(colors["x_keyword_block_color"]))
+            keyword_block_color.setForeground(QColorRRGGBBAA(colors["x_keyword_block_color"]))
         except Exception as e: logError(e)
 
         keyword_color = QTextCharFormat()
         try:
-            keyword_color.setForeground(QColor(colors["x_keyword_color"]))        
+            keyword_color.setForeground(QColorRRGGBBAA(colors["x_keyword_color"]))        
         except Exception as e: logError(e)
 
         name_color = QTextCharFormat()
         try:
-            name_color.setForeground(QColor(colors["x_name_color"]))
+            name_color.setForeground(QColorRRGGBBAA(colors["x_name_color"]))
         except Exception as e: logError(e)
 
         name_function_color = QTextCharFormat()
         try:
-            name_function_color.setForeground(QColor(colors["x_name_function_color"]))
+            name_function_color.setForeground(QColorRRGGBBAA(colors["x_name_function_color"]))
         except Exception as e: logError(e)
 
         number_color = QTextCharFormat()
         try:
-            number_color.setForeground(QColor(colors["x_number_color"]))
+            number_color.setForeground(QColorRRGGBBAA(colors["x_number_color"]))
         except Exception as e: logError(e)
 
         self.string_color = QTextCharFormat()        
         try:
-            self.string_color.setForeground(QColor(colors["x_string_color"]))            
+            self.string_color.setForeground(QColorRRGGBBAA(colors["x_string_color"]))            
         except Exception as e: logError(e)
 
         string_multiline_color = QTextCharFormat()
         try:
-            string_multiline_color.setForeground(QColor(colors["x_string_multiline_color"]))
+            string_multiline_color.setForeground(QColorRRGGBBAA(colors["x_string_multiline_color"]))
         except Exception as e: logError(e)
 
         self.add_highlighting_rule(R"([\^&\|~!])(?!=)", self.keyword_attention_color) 
@@ -2057,7 +2123,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(0)
-            qcolor = QColor(color_code)
+            qcolor = QColorRRGGBBAA(color_code)
             if not qcolor.isValid():
                 continue
             fmt = QTextCharFormat()
@@ -2083,7 +2149,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(1)
-            qcolor = QColor(color_code)
+            qcolor = QColorRRGGBBAA(color_code)
             if not qcolor.isValid():
                 continue
             fmt = QTextCharFormat()
@@ -2109,7 +2175,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(0)
-            qcolor = QColor( convert_color_to_hex(color_code) )
+            qcolor = QColorRRGGBBAA( convert_color_to_hex(color_code) )
             if not qcolor.isValid():
                 continue
             fmt = QTextCharFormat()
@@ -2648,6 +2714,28 @@ class HtmlJavaScriptHighlightingAddon:
             "Intl", "Intl.DateTimeFormat", "Intl.NumberFormat", "Intl.Collator",
             "Intl.ListFormat", "Intl.PluralRules", "Intl.RelativeTimeFormat",
             "Intl.DisplayNames", "Intl.Locale", "Intl.Segmenter",
+            
+            # + еще некоторые
+            "getSelection", "createRange", "removeAllRanges", "addRange",
+            "execCommand", "devicePixelRatio", "writeText", "globalCompositeOperation",
+            "strokeStyle", "lineWidth", "lineCap", "lineJoin", "beginPath",
+            
+            # AnkiDroidJS
+            "ankiAnswerEase1", "ankiAnswerEase2", "ankiAnswerEase3", "ankiAnswerEase4",
+            "ankiBuryCard", "ankiBuryNote", "ankiEnableHorizontalScrollbar", "ankiEnableVerticalScrollbar",
+            "ankiGetCardDid", "ankiGetCardDue", "ankiGetCardFactor", "ankiGetCardFlag",
+            "ankiGetCardId", "ankiGetCardInterval", "ankiGetCardLapses", "ankiGetCardLeft",
+            "ankiGetCardMark", "ankiGetCardMod", "ankiGetCardNid", "ankiGetCardODid",
+            "ankiGetCardODue", "ankiGetCardQueue", "ankiGetCardReps", "ankiGetCardType",
+            "ankiGetDeckName", "ankiGetETA", "ankiGetLrnCardCount", "ankiGetNewCardCount", 
+            "ankiGetNextTime1", "ankiGetNextTime2", "ankiGetNextTime3", "ankiGetNextTime4",
+            "ankiGetRevCardCount", "ankiIsActiveNetworkMetered", "ankiIsDisplayingAnswer", "ankiIsInFullscreen",
+            "ankiIsInNightMode", "ankiIsTopbarShown", "ankiMarkCard", "ankiResetProgress",
+            "ankiSearchCard", "ankiSearchCardWithCallback", "ankiSetCardDue", "ankiShowAnswer",
+            "ankiShowNavigationDrawer", "ankiShowOptionsMenu", "ankiShowToast", "ankiSttSetLanguage",
+            "ankiSttStart", "ankiSttStop", "ankiSuspendCard", "ankiSuspendNote", 
+            "ankiToggleFlag", "ankiTtsFieldModifierIsAvailable", "ankiTtsIsSpeaking", "ankiTtsSetLanguage",
+            "ankiTtsSetPitch", "ankiTtsSetSpeechRate", "ankiTtsSpeak", "ankiTtsStop",            
 
             # Базовые интерфейсы
             "HTMLElement", "HTMLDivElement", "HTMLSpanElement", "HTMLButtonElement",
@@ -4165,13 +4253,13 @@ class HtmlJavaScriptHighlightingAddon:
         cntErr = 10000
         # Перемещаем курсор влево, пока не найдем символ начала слова или не достигнем начала текста        
         while current_position > 0:
-            cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor)
+            cursor.movePosition(QTextCursorLeft, KeepAnchor)
             current_position -= 1
             selected_text = cursor.selectedText()
             # Проверяем, начинается ли выделенный текст с буквы или подчеркивания
             if selected_text and not (selected_text[0].isalnum() or selected_text[0] in "-_<%"): # not (selected_text[0].isalpha() or selected_text[0] == "_" or selected_text[0] == "<" or selected_text[0] == "%")
                 while selected_text:
-                    cursor.movePosition(QTextCursor.MoveOperation.Right, KeepAnchor)
+                    cursor.movePosition(QTextCursorRight, KeepAnchor)
                     current_position += 1
                     selected_text = cursor.selectedText()
                     if selected_text and (selected_text[0].isalpha() or selected_text[0] == "_" or selected_text[0] == "<" or selected_text[0] == "%"):
@@ -4220,13 +4308,13 @@ class HtmlJavaScriptHighlightingAddon:
         cntErr = 10000
         # Перемещаем курсор влево, пока не найдем символ начала слова или не достигнем начала текста
         while current_position > 0:
-            cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor)
+            cursor.movePosition(QTextCursorLeft, KeepAnchor)
             current_position -= 1
             selected_text = cursor.selectedText()
             # Проверяем, начинается ли выделенный текст с буквы или подчеркивания
             if selected_text and not (selected_text[0].isalnum() or selected_text[0] in "-_<%"): # not (selected_text[0].isalpha() or selected_text[0] == "_" or selected_text[0] == "<" or selected_text[0] == "%")
                 while selected_text:
-                    cursor.movePosition(QTextCursor.MoveOperation.Right, KeepAnchor)
+                    cursor.movePosition(QTextCursorRight, KeepAnchor)
                     current_position += 1
                     selected_text = cursor.selectedText()
                     if selected_text and (selected_text[0].isalpha() or selected_text[0] == "_" or selected_text[0] == "<" or selected_text[0] == "%"):
@@ -4258,7 +4346,7 @@ class HtmlJavaScriptHighlightingAddon:
                 cursor.setPosition(end_position, KeepAnchor)
             else:
                 # Если '%%' нет, устанавливаем курсор в конец текста
-                #cursor.movePosition(QTextCursor.MoveOperation.End)
+                #cursor.movePosition(QTextCursorEnd)
                 pass
             # Применяем изменения к текстовому полю
             edit_area.setTextCursor(cursor)
@@ -4305,6 +4393,7 @@ class HtmlJavaScriptHighlightingAddon:
         # Добавляем статусную строку (QLabel)
         if not hasattr(edit_area, "status_label"):            
             status_label = QLabel()
+            status_label.setWordWrap(True)
             status_label.setStyleSheet("font-size: 10pt; color: #888; padding: 2px;")
             edit_area.status_label = status_label
             # Добавляем QLabel под редактор (или куда нужно)
@@ -4664,6 +4753,7 @@ class HtmlJavaScriptHighlightingAddon:
         Menu_Tab = localizationF("Menu_Tab", "Insert 4 spaces (and if selected, before lines)")
         Menu_LShiftTab = localizationF("Menu_LShiftTab", "delete back 4 spaces (and if selected, before lines)")
         Menu_RShiftTab = localizationF("Menu_RShiftTab", "insert a tab character (if needed in the code tag and other similar ones)")        
+        Menu_ShiftBackSpace = localizationF("Menu_ShiftBackSpace", "remove all spaces from the left (and if lines are selected, removes the last spaces on the lines)")        
         Menu_Home = localizationF("Menu_Home","go to the beginning of the text, and if already there, then to the beginning of the line")
         Menu_End = localizationF("Menu_End","go to the end of the line, and if already there, then to the end of the text")
         Menu_Enter = localizationF("Menu_Enter","insert with spaces if at the beginning of the text or at the end (special cases for {}). If the autocomplete window is open, Enter and Tab enter the top one from the list")
@@ -4717,6 +4807,7 @@ class HtmlJavaScriptHighlightingAddon:
 <br>Tab — {Menu_Tab}
 <br>RShift+Tab — {Menu_RShiftTab}
 <br>LShift+Tab — {Menu_LShiftTab}
+<br>Shift+BackSpace — {Menu_ShiftBackSpace}
 <br>Ctrl+Tab — {Search_forward} %%
 <br>Ctrl+Shift+Tab — {Search_back} %%
 <br>Ctrl+Space — {Show_Code_completion}
@@ -5341,6 +5432,57 @@ class HtmlJavaScriptHighlightingAddon:
                 return
             
         if not Ctrl and not Alt:
+            if key == Key_Backspace and Shift: 
+                cursor = edit_area.textCursor()
+                if not cursor.hasSelection():
+                    # Удаление всех пробелов/табуляций слева от курсора до непробельного символа
+                    block = cursor.block()
+                    pos_in_block = cursor.position() - block.position()
+                    if pos_in_block > 0:
+                        line_text = block.text()
+                        # Находим последний непробельный символ перед курсором
+                        i = pos_in_block - 1
+                        while i >= 0 and line_text[i].isspace():
+                            i -= 1
+                        start = i + 1  # позиция первого удаляемого пробела
+                        if start < pos_in_block:
+                            cursor.setPosition(block.position() + start, MoveAnchor)
+                            cursor.setPosition(block.position() + pos_in_block, KeepAnchor)
+                            cursor.removeSelectedText()
+                else:
+                    # Удаление trailing пробелов/табуляций в каждой выделенной строке
+                    sel_start = cursor.selectionStart()
+                    sel_end = cursor.selectionEnd()
+                    # Определяем номера блоков начала и конца выделения
+                    cursor.setPosition(sel_start)
+                    start_block = cursor.blockNumber()
+                    cursor.setPosition(sel_end)
+                    end_block = cursor.blockNumber()
+                    
+                    cursor.beginEditBlock()
+                    try:
+                        for block_num in range(start_block, end_block + 1):
+                            block = cursor.document().findBlockByNumber(block_num)
+                            if not block.isValid():
+                                continue
+                            cursor.setPosition(block.position())
+                            cursor.movePosition(EndOfBlock)
+                            # Собираем пробелы справа, двигаясь влево
+                            while True:
+                                if cursor.position() <= block.position():
+                                    break
+                                cursor.movePosition(PreviousCharacter, KeepAnchor)
+                                if not cursor.selectedText().isspace():
+                                    # Возвращаемся на один символ вправо (снимаем выделение)
+                                    cursor.movePosition(QTextCursorRight, KeepAnchor)
+                                    break
+                            # Удаляем выделенные пробелы (если они есть)
+                            cursor.removeSelectedText()
+                    finally:
+                        cursor.endEditBlock()
+                return
+
+
             if  key in (Key_Tab, Key_Backtab):
                 cursor = edit_area.textCursor()
                 if not cursor.hasSelection(): # Если нет выделения                         
@@ -5374,39 +5516,39 @@ class HtmlJavaScriptHighlightingAddon:
                 selection_end = cursor.selectionEnd()
                 # Устанавливаем курсор в начало выделения
                 cursor.setPosition(selection_start)
-                cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+                cursor.movePosition(StartOfBlock)
                 start_block = cursor.blockNumber()
                 # Устанавливаем курсор в конец выделения
                 cursor.setPosition(selection_end)
-                cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+                cursor.movePosition(EndOfBlock)
                 end_block = cursor.blockNumber()
 
                 cursor.beginEditBlock()  # Начинаем групповое редактирование
                 try:
                     # Устанавливаем курсор на начало первого блока
                     cursor.setPosition(selection_start)
-                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+                    cursor.movePosition(StartOfBlock)
 
                     if not Shift:
                         # Добавляем 4 пробела перед каждой строкой
                         for block_number in range(start_block, end_block + 1):
-                            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+                            cursor.movePosition(StartOfBlock)
                             cursor.insertText('    ')
-                            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+                            cursor.movePosition(NextBlock)
                     else:
                         # Удаляем до 4 пробелов перед каждой строкой
                         for block_number in range(start_block, end_block + 1):
-                            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)  # Перемещаемся в начало строки
-                            while cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, KeepAnchor):
+                            cursor.movePosition(StartOfBlock)  # Перемещаемся в начало строки
+                            while cursor.movePosition(NextCharacter, KeepAnchor):
                                 if "\t" in cursor.selectedText(): # Если выделенный текст содержит табуляцию, заменяем её на 4 пробела
                                     # Заменяем табуляцию на 4 пробела
                                     replacement = cursor.selectedText().replace("\t", "    ")
                                     cursor.insertText(replacement)
                                     # Обновляем выделение, чтобы включить новые пробелы
-                                    cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-                                    cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, KeepAnchor, len(replacement))
+                                    cursor.movePosition(StartOfBlock)
+                                    cursor.movePosition(NextCharacter, KeepAnchor, len(replacement))
                                 if not cursor.selectedText().isspace() and "\t" not in cursor.selectedText():  # Проверяем, что символ не пробел и не табуляция
-                                    cursor.movePosition(QTextCursor.MoveOperation.PreviousCharacter, KeepAnchor)  # Возвращаемся на один символ назад
+                                    cursor.movePosition(PreviousCharacter, KeepAnchor)  # Возвращаемся на один символ назад
                                     break
                             # Удаляем выделенные пробелы
                             if cursor.selectedText().isspace():
@@ -5417,7 +5559,7 @@ class HtmlJavaScriptHighlightingAddon:
                             
 
 
-                            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+                            cursor.movePosition(NextBlock)
                 finally:
                     cursor.endEditBlock()  # Завершаем групповое редактирование
                 return   
@@ -5539,7 +5681,7 @@ class HtmlJavaScriptHighlightingAddon:
         if key == Key_Minus:
             original_key_press(event)
             cursor.setPosition(position + 1)
-            cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor, 4)
+            cursor.movePosition(QTextCursorLeft, KeepAnchor, 4)
             text_before = cursor.selectedText()
             if text_before == "<!--":
                 cursor.setPosition(position + 1)
@@ -5551,7 +5693,7 @@ class HtmlJavaScriptHighlightingAddon:
         if key == Key_Asterisk:
             original_key_press(event)
             cursor.setPosition(position + 1)
-            cursor.movePosition(QTextCursor.MoveOperation.Left, KeepAnchor, 2)
+            cursor.movePosition(QTextCursorLeft, KeepAnchor, 2)
             text_before = cursor.selectedText()
             if text_before == "/*":
                 cursor.setPosition(position + 1)
@@ -5564,7 +5706,7 @@ class HtmlJavaScriptHighlightingAddon:
         if key == Key_Greater:
             original_key_press(event)
             cursor.setPosition(position+1)
-            cursor.movePosition(QTextCursor.MoveOperation.StartOfLine, KeepAnchor)
+            cursor.movePosition(StartOfLine, KeepAnchor)
             text_before = cursor.selectedText().rstrip()
     
             for no_close_tag in self.no_close_tags:
@@ -5636,6 +5778,21 @@ class HtmlJavaScriptHighlightingAddon:
         sel_end = cursor.selectionEnd()
         full_text = edit_area.toPlainText()
 
+        # --- РАСШИРЕНИЕ ВЫДЕЛЕНИЯ ВЛЕВО, ЕСЛИ ЕСТЬ # ---        
+        if not selected_text.startswith('#'):
+            # Если слева есть символ # и мы не в начале документа
+            if sel_start > 0 and full_text[sel_start - 1] == '#':
+                # Расширяем выделение влево
+                cursor.setPosition(sel_start - 1, MoveAnchor)
+                cursor.setPosition(sel_end, KeepAnchor)
+                edit_area.setTextCursor(cursor)
+                # Обновляем переменные для нового выделения
+                sel_start = cursor.selectionStart()
+                sel_end = cursor.selectionEnd()
+                selected_text = cursor.selectedText()
+        
+        
+
         # Поиск <span style="color: ...">...</span> вокруг выделения
         pattern_span = re.compile(
             r'<span\s+style="color:\s*([^";]+)[^"]*"\s*>(.*?)</span>',
@@ -5660,7 +5817,7 @@ class HtmlJavaScriptHighlightingAddon:
             color_code = selected_text.strip()
             dialog_title = localizationF("change_color_code", "Change color code only")
 
-        color = QColor(color_code) if color_code else QColor()
+        color = QColorRRGGBBAA(color_code) if color_code else QColor()
         color = QColorDialog.getColor(color, edit_area, dialog_title)
         if not color.isValid():
             return
@@ -5706,6 +5863,20 @@ class HtmlJavaScriptHighlightingAddon:
         sel_end = cursor.selectionEnd()
         full_text = edit_area.toPlainText()
 
+        # --- РАСШИРЕНИЕ ВЫДЕЛЕНИЯ ВЛЕВО, ЕСЛИ ЕСТЬ # ---        
+        if not selected_text.startswith('#'):
+            # Если слева есть символ # и мы не в начале документа
+            if sel_start > 0 and full_text[sel_start - 1] == '#':
+                # Расширяем выделение влево
+                cursor.setPosition(sel_start - 1, MoveAnchor)
+                cursor.setPosition(sel_end, KeepAnchor)
+                edit_area.setTextCursor(cursor)
+                # Обновляем переменные для нового выделения
+                sel_start = cursor.selectionStart()
+                sel_end = cursor.selectionEnd()
+                selected_text = cursor.selectedText()     
+        
+
         # Поиск <p style="background-color: ...">...</p> вокруг выделения
         pattern_p = re.compile(
             r'<p\s+style="background-color:\s*([^";]+)[^"]*"\s*>(.*?)</p>',
@@ -5732,7 +5903,7 @@ class HtmlJavaScriptHighlightingAddon:
         
 
 
-        color = QColor(color_code) if color_code else QColor()
+        color = QColorRRGGBBAA(color_code) if color_code else QColor()
         color = QColorDialog.getColor(color, edit_area, dialog_title)
         if not color.isValid():
             return
