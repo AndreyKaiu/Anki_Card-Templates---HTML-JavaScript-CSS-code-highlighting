@@ -16,7 +16,7 @@
 # - highlighting by code of all words as in the current selection, 
 #     the ability to find the desired word by code (Ctrl+F, and continue F3)
 # https://github.com/AndreyKaiu/Anki_Card-Templates---HTML-JavaScript-CSS-code-highlighting
-# Version 1.4, date: 2026-08-15
+# Version 1.4, date: 2026-08-17
 import os
 import json
 import time
@@ -2175,7 +2175,7 @@ class HtmlSyntaxHighlighter(QSyntaxHighlighter):
         while color_iter.hasNext():
             match = color_iter.next()   
             color_code = match.captured(0)
-            qcolor = QColorRRGGBBAA( convert_color_to_hex(color_code) )
+            qcolor = QColor(convert_color_to_hex(color_code))
             if not qcolor.isValid():
                 continue
             fmt = QTextCharFormat()
