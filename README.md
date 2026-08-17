@@ -83,6 +83,7 @@ Minor bugs have been fixed.
 Attention! This addon will change the Anki help URL if the Anki interface language is one of the following: "Pусский язык", "Polski", "Português", "Українська мова", "العربية", "简体中文" (and for Taiwan the same site). There are no other languages, because either the sites are old or the site structure is not the same.
 
 **VERSIONS**
+- 1.4, date: 2026-08-17. Fixed a bug for rgba()
 - 1.4, date: 2026-08-15. #RRGGBBAA color format for user presentation. The Anki help URL is changing to match the interface language. Added a new hotkey combination "Shift+BackSpace"
 
 - 1.3, date: 2026-05-23. Fixed an error when entering "())". Added the ability to save the line number with "Ctrl+Shift+G" 
